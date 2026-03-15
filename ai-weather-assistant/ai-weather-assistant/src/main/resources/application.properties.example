@@ -1,0 +1,8 @@
+spring.application.name=ai-weather-assistant
+
+server.port=8081
+server.error.include-message=always
+server.error.include-binding-errors=always
+
+# Copy this file to application.properties and fill in your real key
+weather.api.key=YOUR_API_KEY_HERE
