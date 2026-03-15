@@ -51,10 +51,11 @@ public class WeatherController {
     public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city) throws InterruptedException {
         String weatherData = weatherService.getWeather(city);
         String visualPrompt = aiService.askAI("""
-                Based on this weather data, write a short vivid image generation prompt (max 20 words).
-                Describe the scene, lighting, atmosphere. No people. No text. Landscape or cityscape only.
-                Weather data: %s
-                """.formatted(weatherData));
+        Based on this weather data, write a short vivid image generation prompt (max 20 words).
+        Describe a single unique cityscape or landscape scene with specific lighting and atmosphere.
+        Emphasize unique architectural details. No people. No text. No repeated elements.
+        Weather data: %s
+        """.formatted(weatherData));
 
         System.out.println("Visual prompt for ComfyUI: " + visualPrompt);
         byte[] imageBytes = comfyUIService.generateWeatherImage(visualPrompt);
