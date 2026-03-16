@@ -76,14 +76,17 @@ public class WeatherController {
         WeatherData data = weatherService.getWeather(city);
         String description = aiService.askAI("Describe this weather in 2-3 friendly sentences: " + data.getRawJson());
         return Map.of(
-            "city", data.getCity(),
-            "country", data.getCountry(),
-            "tempF", data.getTempF(),
-            "Condition", data.getCondition(),
-            "timeOfDay", data.getTimeOfDay(),
-            "season", data.getSeason(),
-            "description", description,
-            "imageUrl", "/weather/image?city=" + city);
+    "city",        data.getCity(),
+    "country",     data.getCountry(),
+    "tempF",       data.getTempF(),
+    "feelsLikeF",  data.getFeelsLikeF(),
+    "humidity",    data.getHumidity(),
+    "windSpeed",   data.getWindSpeed(),
+    "condition",   data.getCondition(),
+    "timeOfDay",   data.getTimeOfDay(),
+    "season",      data.getSeason(),
+    "description", description
+);
         
     }
 }

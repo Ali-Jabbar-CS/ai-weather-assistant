@@ -86,7 +86,12 @@ if (start != -1) {
         result.append(c);
         i++;
     }
-    return result.toString().trim();
+  String response = result.toString().trim();
+// Strip common Llama3 preamble phrases
+response = response.replaceAll("(?i)here's a friendly description of the weather:\\s*", "");
+response = response.replaceAll("(?i)here's a description of the weather:\\s*", "");
+response = response.replaceAll("(?i)here's the weather description:\\s*", "");
+return response.trim();
 }
 return body;
 
