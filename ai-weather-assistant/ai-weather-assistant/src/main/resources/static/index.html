@@ -86,12 +86,14 @@
   letter-spacing: 3px;
   word-spacing: 8px;
 }
-    .search-wrap {
+ .search-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 50px;
   padding: 6px 6px 6px 24px;
   transition: border-color 0.2s;
@@ -99,7 +101,9 @@
   max-width: 640px;
   margin: 0 auto;
 }
-
+.search-wrap:focus-within {
+  border-color: rgba(255,255,255,0.35);
+}
 .search-section {
   max-width: 640px;
   margin: 0 auto;
@@ -137,6 +141,19 @@
     }
     #search-btn:hover {background: #d44a2d;}
     #search-btn:active {transform: scale(0.97);}
+
+   #result-image {
+  width: 100%;
+  display: block;
+  border-radius: 20px;
+  filter: blur(80px);
+  transform: scale(1.05);
+  transition: filter 2s ease, transform 2s ease;
+}
+#result-image.loaded {
+  filter: blur(0px);
+  transform: scale(1);
+}
 
     .autocomplete-list {
         position: absolute;
@@ -263,13 +280,20 @@
   gap: 12px;
   margin-bottom: 24px;
 }
-    .stat-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 14px;
-        padding: 16px 20px;
-        text-align: center;
-    }
+   .stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 16px 20px;
+  text-align: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.stat-card:hover {
+  border-color: rgba(232,89,60,0.4);
+  box-shadow: 0 0 16px rgba(232,89,60,0.15);
+}
+
     .stat-label {
         font-family: 'Courier New', monospace;
         font-size: 9px;
@@ -313,10 +337,24 @@
         border-top: 1px solid rgba(255,255,255,0.05);
         margin-top: 20px;
     }
+    @keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+}
+.results.visible .fade-up {
+  animation: fadeUp 0.6s ease forwards;
+}
 </style>
 </head>
 
 <body>
+  <canvas id="stars" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+  
+
+  
 
 <!-- ========== LANDMARKS ========== -->
 
@@ -500,7 +538,8 @@
 <!--========= HERO ==========-->
 <section class="hero">
     <p class="hero-eyebrow">AI-Powered Weather Intelligence</p>
-    <h1 class="hero-title">SkyVision</h1>
+   <h1 class="hero-title">SkyVision</h1>
+<div style="width:360px;height:2px;background:linear-gradient(90deg,transparent,#E8593C,transparent);margin:0 auto 16px;border-radius:2px;"></div>
     <p class="hero-sub">Real Weather &nbsp;.&nbsp; Real Intelligence &nbsp;.&nbsp; Real Imagery</p>
 </section>
 
@@ -537,7 +576,7 @@
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.2);">·</span>
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">AI WEATHER DEPICTIONS</span>
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.2);">·</span>
-  <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">60+ CITIES</span>
+  <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">300+ CITIES</span>
 </div>
 
 
@@ -552,12 +591,12 @@
  <div class="loading" id="loading">
     <div class="loading-ring"></div>
     <p class="loading-text">GENERATING</p>
-    <p class="loading-step" id="loading-step">Fetching Weather Data...</p>
+    <p class="loading-step" id="loading-step">Fetching weather data...</p>
  </div>
 
  <!-- ========== RESULTS ========== -->
   <section class="results" id="results">
-  <div class="result-image-wrap">
+  <div class="result-image-wrap fade-up fade-up-delay-1">
     <img id="result-image" src="" alt="Weather scene"/>
     <div class="image-overlay">
       <div class="overlay-city" id="overlay-city"></div>
@@ -565,8 +604,7 @@
     </div>
   </div>
 
-
-     <div class="stats-row">
+  <div class="stats-row fade-up fade-up-delay-2">
     <div class="stat-card">
       <div class="stat-label">Temperature</div>
       <div class="stat-value" id="stat-temp">--</div>
@@ -593,7 +631,38 @@
     </div>
   </div>
 
-  <div class="description-card" id="description-text"></div>
+  <div class="description-card fade-up fade-up-delay-3" id="description-text"></div>
+</section>
+
+
+     <div class="stats-row fade-up fade-up-delay-2">
+    <div class="stat-card">
+      <div class="stat-label">Temperature</div>
+      <div class="stat-value" id="stat-temp">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Feels like</div>
+      <div class="stat-value" id="stat-feels">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Humidity</div>
+      <div class="stat-value" id="stat-humidity">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Wind</div>
+      <div class="stat-value" id="stat-wind">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Time of day</div>
+      <div class="stat-value" id="stat-time">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Season</div>
+      <div class="stat-value" id="stat-season">--</div>
+    </div>
+  </div>
+
+ <div class="description-card fade-up fade-up-delay-3" id="description-text"></div>
 </section>
 
 <div class="footer-line">SKYVISION &nbsp;·&nbsp; POWERED BY LLAMA3 + SDXL</div>
@@ -804,46 +873,110 @@ document.addEventListener('click', e => {
     document.getElementById('stat-season').textContent  = capitalize(d.season);
   }
 
-  function setLoadingStep(text) {
-    document.getElementById('loading-step').textContent = text;
+  
+
+  const loadingPhrases = [
+  'Consulting the clouds...',
+  'Reading the atmosphere...',
+  'Whispering to the wind...',
+  'Capturing the moment...',
+  'Painting your scene...',
+  'Summoning the forecast...',
+  'Gazing at the horizon...'
+];
+let phraseInterval = null;
+
+function startLoadingPhrases() {
+  let i = 0;
+  document.getElementById('loading-step').textContent = loadingPhrases[0];
+  phraseInterval = setInterval(() => {
+    i = (i + 1) % loadingPhrases.length;
+    document.getElementById('loading-step').textContent = loadingPhrases[i];
+  }, 2000);
+}
+
+function stopLoadingPhrases() {
+  if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
+}
+
+
+async function fetchWeather() {
+  const city = input.value.trim();
+  if (!city) return;
+
+  document.getElementById('loading').classList.add('visible');
+  startLoadingPhrases();
+  document.getElementById('results').classList.remove('visible');
+  list.classList.remove('visible');
+
+  try {
+    const fullResp = await fetch('/weather/full?city=' + encodeURIComponent(city));
+    if (!fullResp.ok) throw new Error('City not found. Please try a different location.');
+    const full = await fullResp.json();
+    weatherData = full;
+
+    document.getElementById('overlay-city').textContent =
+      full.city + ', ' + full.country;
+    document.getElementById('overlay-condition').textContent =
+      full.condition + ' . ' + capitalize(full.timeOfDay) + ' . ' + capitalize(full.season);
+    document.getElementById('description-text').textContent = full.description;
+    updateStats();
+
+    const imgResp = await fetch('/weather/image?city=' + encodeURIComponent(city));
+    if (!imgResp.ok) throw new Error('Image generation failed.');
+    const blob = await imgResp.blob();
+    const img = document.getElementById('result-image');
+img.classList.remove('loaded');
+img.src = URL.createObjectURL(blob);
+img.onload = () => {
+  setTimeout(() => img.classList.add('loaded'), 50);
+};
+
+    stopLoadingPhrases();
+    document.getElementById('loading').classList.remove('visible');
+    document.querySelectorAll('.fade-up').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+    });
+    document.getElementById('results').classList.add('visible');
+
+  } catch (err) {
+    stopLoadingPhrases();
+    document.getElementById('loading').classList.remove('visible');
+    alert('Error: ' + err.message);
   }
+}
 
-  async function fetchWeather() {
-    const city = input.value.trim();
-    if (!city) return;
+  const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+const stars = Array.from({length: 150}, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * canvas.height,
+  r: Math.random() * 1.2 + 0.2,
+  s: Math.random() * 0.12 + 0.04,
+  o: Math.random() * 0.5 + 0.15
+}));
+function drawStars() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  stars.forEach(s => {
+    s.y -= s.s;
+    if (s.y < 0) { s.y = canvas.height; s.x = Math.random() * canvas.width; }
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${s.o})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
 
-    document.getElementById('loading').classList.add('visible');
-    document.getElementById('results').classList.remove('visible');
-    list.classList.remove('visible');
-
-    try {
-        setLoadingStep('Fetching weather data...');
-        const fullResp = await fetch('/weather/full?city=' + encodeURIComponent(city));
-        if (!fullResp.ok) throw new Error('city not found. Please try a different location.');
-        const full = await fullResp.json();
-        weatherData = full;
-
-        document.getElementById('overlay-city').textContent = 
-        full.city + ', ' + full.country;
-        document.getElementById('overlay-condition').textContent = 
-        full.condition + ' . ' + capitalize(full.timeOfDay) + ' . ' + capitalize(full.season);
-         document.getElementById('description-text').textContent = full.description;
-        updateStats();
-
-        setLoadingStep('Painting Your Scene...');
-        const imgResp = await fetch('/weather/image?city=' + encodeURIComponent(city));
-        if (!imgResp.ok) throw new Error('Image Generation Failed');
-        const blob = await imgResp.blob();
-        document.getElementById('result-image').src = URL.createObjectURL(blob);
-
-        document.getElementById('loading').classList.remove('visible')
-        document.getElementById('results').classList.add('visible');
-
-    } catch (err) {
-        document.getElementById('loading').classList.remove('visible');
-        alert('Error: ' + err.message);
-    }
-  }
 </script>
 
 </body>
