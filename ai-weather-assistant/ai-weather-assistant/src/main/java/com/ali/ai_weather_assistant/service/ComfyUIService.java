@@ -26,74 +26,71 @@ public class ComfyUIService {
     // Building the workflow JSON with our weather prompt
     // -------------------------------------------------------
     private String buildWorkflow(String prompt) {
-
-        // This is the ComfyUI API-format workflow 
-        // Each numbered key is a node. Nodes reference each other by ["nodeId", outputIndex]
-        return """
-            {
-              "3": {
-                "inputs": {
-                  "seed": %d,
-                  "steps": 30,
-                  "cfg": 7.5,
-                  "sampler_name": "dpmpp_2m",
-                  "scheduler": "karras",
-                  "denoise": 1.0,
-                  "model": ["4", 0],
-                  "positive": ["6", 0],
-                  "negative": ["7", 0],
-                  "latent_image": ["5", 0]
-                },
-                "class_type": "KSampler"
-              },
-              "4": {
-                "inputs": {
-                  "ckpt_name": "%s"
-                },
-                "class_type": "CheckpointLoaderSimple"
-              },
-              "5": {
-                "inputs": {
-                  "width": 1024,
-                  "height": 1024,
-                  "batch_size": 1
-                },
-                "class_type": "EmptyLatentImage"
-              },
-              "6": {
-                "inputs": {
-                  "text": "%s",
-                  "clip": ["4", 1]
-                },
-                "class_type": "CLIPTextEncode"
-              },
-              "7": {
-                "inputs": {
-                  "text": "ugly, deformed, blurry, low quality, watermark, text, people, crowd",
-                  "clip": ["4", 1]
-                },
-                "class_type": "CLIPTextEncode"
-              },
-              "8": {
-                "inputs": {
-                  "samples": ["3", 0],
-                  "vae": ["4", 2]
-                },
-                "class_type": "VAEDecode"
-              },
-              "9": {
-                "inputs": {
-                  "filename_prefix": "weather",
-                  "images": ["8", 0]
-                },
-                "class_type": "SaveImage"
-              }
-            }
-            """.formatted(
-                (long)(Math.random() * 999999999), // random seed each time
-                checkpoint,
-                escapeForJson(prompt)
-            );
+    return """
+        {
+          "3": {
+            "inputs": {
+              "seed": %d,
+              "steps": 40,
+              "cfg": 5.0,
+              "sampler_name": "dpmpp_2m",
+              "scheduler": "karras",
+              "denoise": 1.0,
+              "model": ["4", 0],
+              "positive": ["6", 0],
+              "negative": ["7", 0],
+              "latent_image": ["5", 0]
+            },
+            "class_type": "KSampler"
+          },
+          "4": {
+            "inputs": {
+              "ckpt_name": "%s"
+            },
+            "class_type": "CheckpointLoaderSimple"
+          },
+          "5": {
+            "inputs": {
+              "width": 1024,
+              "height": 1024,
+              "batch_size": 1
+            },
+            "class_type": "EmptyLatentImage"
+          },
+          "6": {
+            "inputs": {
+              "text": "photorealistic, RAW photo, 8k uhd, highly detailed, professional photography, sharp focus, cinematic lighting, %s",
+              "clip": ["4", 1]
+            },
+            "class_type": "CLIPTextEncode"
+          },
+          "7": {
+            "inputs": {
+              "text": "ugly, deformed, blurry, low quality, watermark, people, crowd, persons, humans, figures, pedestrians, duplicate buildings, mirrored, repeated structures, tiling, symmetrical artifacts, double exposure, plants growing from ground, moss, unrealistic ground textures, text, signs with text, cartoon, anime, painting, illustration, drawing, aerial view, birds eye view, top down, overhead, fisheye, distorted roads, warped perspective",
+              "clip": ["4", 1]
+            },
+            "class_type": "CLIPTextEncode"
+          },
+          "8": {
+            "inputs": {
+              "samples": ["3", 0],
+              "vae": ["4", 2]
+            },
+            "class_type": "VAEDecode"
+          },
+          "9": {
+            "inputs": {
+              "filename_prefix": "weather",
+              "images": ["8", 0]
+            },
+            "class_type": "SaveImage"
+          }
+        }
+        """.formatted(
+            (long)(Math.random() * 999999999),
+            checkpoint,
+            escapeForJson(prompt)
+        );
     }
 
     // --------------------------------------------------

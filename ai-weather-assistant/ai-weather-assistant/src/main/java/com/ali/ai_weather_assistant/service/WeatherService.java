@@ -4,22 +4,63 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.ali.ai_weather_assistant.model.WeatherData;
+
 @Service
 public class WeatherService{
 
     @Value("${weather.api.key}")
     private String apiKey;
 
-    public String getWeather(String City){
-        
+    //Returns raw JSON string
+    public String getWeatherRaw(String city) {
         String url = "https://api.openweathermap.org/data/2.5/weather?q="
-        + City + "&appid=" + apiKey + "&units=imperial";
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        String result = restTemplate.getForObject(url, String.class);
-
-        return result;
+        + city + "&appid=" + apiKey + "&units=imperial";
+            return new RestTemplate().getForObject(url, String.class);
     }
 
+
+    // Returns a parsed WeatherData object for use by the LLM and ComfyUI
+    public WeatherData getWeather(String city) {
+        String json = getWeatherRaw(city);
+
+        // Parse the fields we need using simple string extraction
+        return new WeatherData(
+            city,
+            extractString(json, "\"country\":\""),
+            extractDouble(json, "\"temp\":"),
+            extractDouble(json, "\"feels_like\":"),
+            extractString(json, "\"main\":\""),
+            extractString(json, "\"description\":\""),
+            (int) extractDouble(json, "\"humidity\":"),
+            extractDouble(json, "\"speed\":"),
+            (long) extractDouble(json, "\"sunrise\":"),
+            (long) extractDouble(json, "\"sunset\":"),
+            (long) extractDouble(json, "\"dt\":"),
+            json
+        );
+    }
+
+    // ---- simple JSON field extractors ----
+
+    private String extractString(String json, String key) {
+        int start = json.indexOf(key);
+        if (start == -1) return "unknown";
+        start += key.length();
+        int end = json.indexOf("\"", start);
+        return end == -1 ? "unknown" : json.substring(start, end);
+    }
+
+    private double extractDouble(String json, String key) {
+        int start = json.indexOf(key);
+        if (start == -1) return 0;
+        start += key.length();
+        int end = start;
+        while (end < json.length() && (Character.isDigit(json.charAt(end))
+                || json.charAt(end) == '.' || json.charAt(end) == '-')) {
+            end++;
+        }
+        try { return Double.parseDouble(json.substring(start, end)); }
+        catch (NumberFormatException e) { return 0; }
+    }
 }
