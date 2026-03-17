@@ -786,8 +786,7 @@
 <!--=========SEARCH=========-->
 <section class="search-section">
     <div class="search-wrap">
-        <input id="city-input" type="text"
-        placeholder="Search a City..."
+        <input id="city-input" type="text" placeholder="Search a City... or City, Country..."
         autocomplete="off"/>
         <button id="search-btn" onclick="fetchWeather()">GO →</button>
     </div>
@@ -1247,8 +1246,8 @@ async function fetchWeather() {
     const full = await fullResp.json();
     weatherData = full;
 
-    document.getElementById('overlay-city').textContent =
-      full.city + ', ' + full.country;
+    document.getElementById('overlay-city').textContent = 
+  full.city.includes(',') ? full.city : full.city + ', ' + full.country;
     document.getElementById('overlay-condition').textContent =
       full.condition + ' . ' + capitalize(full.timeOfDay) + ' . ' + capitalize(full.season);
     document.getElementById('description-text').textContent = full.description;
@@ -1434,7 +1433,8 @@ function toggleHistory() {
 function loadFromHistory(entry) {
   weatherData = entry;
   document.getElementById('city-input').value = entry.city;
-  document.getElementById('overlay-city').textContent = entry.city + ', ' + entry.country;
+  document.getElementById('overlay-city').textContent = 
+  entry.city.includes(',') ? entry.city : entry.city + ', ' + entry.country;
   document.getElementById('overlay-condition').textContent =
     entry.condition + ' . ' + capitalize(entry.timeOfDay) + ' . ' + capitalize(entry.season);
   document.getElementById('description-text').textContent = entry.description;
@@ -1569,7 +1569,8 @@ async function checkForSharedResult() {
     const data = await resp.json();
     weatherData = data;
 
-    document.getElementById('overlay-city').textContent = data.city + ', ' + data.country;
+   document.getElementById('overlay-city').textContent = 
+  entry.city.includes(',') ? entry.city : entry.city + ', ' + entry.country;
     document.getElementById('overlay-condition').textContent =
       data.condition + ' . ' + capitalize(data.timeOfDay) + ' . ' + capitalize(data.season);
     document.getElementById('description-text').textContent = data.description;
