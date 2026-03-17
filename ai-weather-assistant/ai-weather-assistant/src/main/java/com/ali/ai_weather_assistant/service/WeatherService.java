@@ -7,24 +7,20 @@ import org.springframework.web.client.RestTemplate;
 import com.ali.ai_weather_assistant.model.WeatherData;
 
 @Service
-public class WeatherService{
+public class WeatherService {
 
     @Value("${weather.api.key}")
     private String apiKey;
 
-    //Returns raw JSON string
     public String getWeatherRaw(String city) {
         String url = "https://api.openweathermap.org/data/2.5/weather?q="
-        + city + "&appid=" + apiKey + "&units=imperial";
-            return new RestTemplate().getForObject(url, String.class);
+                + city + "&appid=" + apiKey + "&units=imperial";
+        return new RestTemplate().getForObject(url, String.class);
     }
 
-
-    // Returns a parsed WeatherData object for use by the LLM and ComfyUI
     public WeatherData getWeather(String city) {
         String json = getWeatherRaw(city);
 
-        // Parse the fields we need using simple string extraction
         return new WeatherData(
             city,
             extractString(json, "\"country\":\""),
@@ -37,11 +33,10 @@ public class WeatherService{
             (long) extractDouble(json, "\"sunrise\":"),
             (long) extractDouble(json, "\"sunset\":"),
             (long) extractDouble(json, "\"dt\":"),
+            (int) extractDouble(json, "\"timezone\":"),
             json
         );
     }
-
-    // ---- simple JSON field extractors ----
 
     private String extractString(String json, String key) {
         int start = json.indexOf(key);

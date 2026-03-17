@@ -865,7 +865,7 @@
       <div class="stat-value" id="stat-wind">--</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Time of day</div>
+      <div class="stat-label">Local Time</div>
       <div class="stat-value" id="stat-time">--</div>
     </div>
     <div class="stat-card">
@@ -1093,16 +1093,13 @@ document.addEventListener('click', e => {
     return useFahrenheit ? Math.round(f) + '°F' : toC(f) + '°C';
   }
 
- function formatTimeOfDay(t) {
+function formatTimeOfDay(t) {
   if (use12hr) {
-    const m12 = { morning:'8:00 AM', afternoon:'2:00 PM', evening:'7:00 PM', night:'11:00 PM' };
-    return m12[t] || t;
+    return weatherData.exactTime12 || t;
   } else {
-    const m24 = { morning:'08:00', afternoon:'14:00', evening:'19:00', night:'23:00' };
-    return m24[t] || t;
+    return weatherData.exactTime24 || t;
   }
 }
-
   function capitalize(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }

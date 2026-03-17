@@ -1,7 +1,5 @@
 package com.ali.ai_weather_assistant.controller;
 
-import java.util.Map;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,7 +18,8 @@ public class WeatherController {
     private final AIService aiService;
     private final ComfyUIService comfyUIService;
 
-    public WeatherController(WeatherService weatherService, AIService aiService, ComfyUIService comfyUIService) {
+    public WeatherController(WeatherService weatherService, AIService aiService,
+                             ComfyUIService comfyUIService) {
         this.weatherService = weatherService;
         this.aiService = aiService;
         this.comfyUIService = comfyUIService;
@@ -39,32 +38,37 @@ public class WeatherController {
     @GetMapping("/weather/describe")
     public String describeWeather(@RequestParam String city) {
         WeatherData data = weatherService.getWeather(city);
-      String prompt = """
-        Describe the weather in %s in exactly 2 sentences.
-        Current conditions: %.1f degrees Fahrenheit, %s.
-        Only describe temperature and sky conditions. 
-        Do NOT mention time of day, season, or make comparisons.
-        """.formatted(
-            data.getCity(),
-            data.getTempF(),
-            data.getDescription());
+        String prompt = """
+                Describe the current weather in %s in exactly 2 sentences.
+                Facts: %s, %.1f degrees Fahrenheit (feels like %.1f), humidity %d%%, wind %.1f mph, %s, %s.
+                Be specific and factual. Mention temperature and conditions only. No metaphors or food references.
+                """.formatted(
+                    data.getCity(),
+                    data.getDescription(),
+                    data.getTempF(),
+                    data.getFeelsLikeF(),
+                    data.getHumidity(),
+                    data.getWindSpeed(),
+                    data.getTimeOfDay(),
+                    data.getSeason());
         return aiService.askAI(prompt);
     }
 
     @GetMapping(value = "/weather/image", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city) throws InterruptedException {
+    public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city)
+            throws InterruptedException {
         WeatherData data = weatherService.getWeather(city);
-      String visualPrompt = aiService.askAI(
-    "Write a photorealistic image generation prompt (max 15 words) for a " +
-    data.getSeason() + " " + data.getTimeOfDay() + " cityscape in " +
-    data.getCity() + ", " + data.getCountry() + ". " +
-    "Weather: " + data.getDescription() + ". " +
-    (data.isDaytime() ? "Natural daylight. " : "Dramatic night lighting. ") +
-    "Must include a famous skyline, landmark, or iconic architecture. " +
-    "Street level perspective. No residential buildings. No gardens. " +
-    "No people. No text. Photorealistic only."
-);
 
+        String visualPrompt = aiService.askAI(
+            "Write a photorealistic image generation prompt (max 15 words) for a " +
+            data.getSeason() + " " + data.getTimeOfDay() + " cityscape in " +
+            data.getCity() + ", " + data.getCountry() + ". " +
+            "Weather: " + data.getDescription() + ". " +
+            (data.isDaytime() ? "Natural daylight. " : "Dramatic night lighting. ") +
+            "Must include a famous skyline, landmark, or iconic architecture. " +
+            "Street level perspective. No residential buildings. No gardens. " +
+            "No people. No text. Photorealistic only."
+        );
 
         System.out.println("Visual prompt: " + visualPrompt);
         byte[] imageBytes = comfyUIService.generateWeatherImage(visualPrompt);
@@ -72,21 +76,37 @@ public class WeatherController {
     }
 
     @GetMapping("/weather/full")
-    public Map<String, Object> getFullWeatherReport(@RequestParam String city) throws InterruptedException {
+    public java.util.Map<String, Object> getFullWeatherReport(@RequestParam String city)
+            throws InterruptedException {
         WeatherData data = weatherService.getWeather(city);
-        String description = aiService.askAI("Describe this weather in 2-3 friendly sentences: " + data.getRawJson());
-        return Map.of(
-    "city",        data.getCity(),
-    "country",     data.getCountry(),
-    "tempF",       data.getTempF(),
-    "feelsLikeF",  data.getFeelsLikeF(),
-    "humidity",    data.getHumidity(),
-    "windSpeed",   data.getWindSpeed(),
-    "condition",   data.getCondition(),
-    "timeOfDay",   data.getTimeOfDay(),
-    "season",      data.getSeason(),
-    "description", description
-);
-        
+
+        String prompt = """
+                Describe the current weather in %s in exactly 2 sentences.
+                Facts: %s, %.1f degrees Fahrenheit (feels like %.1f), humidity %d%%, wind %.1f mph.
+                Be specific and factual. No metaphors, no food references, no exclamations.
+                """.formatted(
+                    data.getCity(),
+                    data.getDescription(),
+                    data.getTempF(),
+                    data.getFeelsLikeF(),
+                    data.getHumidity(),
+                    data.getWindSpeed());
+
+        String description = aiService.askAI(prompt);
+
+        return java.util.Map.ofEntries(
+            java.util.Map.entry("city",        data.getCity()),
+            java.util.Map.entry("country",     data.getCountry()),
+            java.util.Map.entry("tempF",       data.getTempF()),
+            java.util.Map.entry("feelsLikeF",  data.getFeelsLikeF()),
+            java.util.Map.entry("humidity",    data.getHumidity()),
+            java.util.Map.entry("windSpeed",   data.getWindSpeed()),
+            java.util.Map.entry("condition",   data.getCondition()),
+            java.util.Map.entry("timeOfDay",   data.getTimeOfDay()),
+            java.util.Map.entry("season",      data.getSeason()),
+            java.util.Map.entry("exactTime12", data.getExactTime12()),
+            java.util.Map.entry("exactTime24", data.getExactTime24()),
+            java.util.Map.entry("description", description)
+        );
     }
 }
