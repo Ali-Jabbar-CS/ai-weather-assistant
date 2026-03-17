@@ -52,6 +52,9 @@
         opacity: 0.45;
         letter-spacing: 1px;
     }
+    .lm {
+  pointer-events: none;
+}
 
  .hero {
   position: relative;
@@ -309,17 +312,23 @@
         font-weight: 700;
         font-style: italic;
     }
-    .description-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 16px;
-        padding: 28px 32px;
-        font-size: 17px;
-        line-height: 1.75;
-        color: rgba(255,255,255,0.75);
-        font-style: italic;
-        position: relative;
-    }
+ .description-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px 32px;
+  font-size: 17px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.75);
+  font-style: italic;
+  position: relative;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.description-card:hover {
+  border-color: rgba(232,89,60,0.4);
+  box-shadow: 0 0 20px rgba(232,89,60,0.15);
+}
+
     .description-card::before {
         content: '"';
         position: absolute;
@@ -399,293 +408,369 @@
 </style>
 </head>
 
+
 <body>
   <canvas id="stars" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
   
 
   
 
+
+
 <!-- ========== LANDMARKS ========== -->
 
-<!-- EIFFEL TOWER — top left, large -->
-<svg class="lm fa" style="position:fixed;left:15px;top:30px;width:90px;height:200px;pointer-events:none;z-index:1;" viewBox="0 0 100 210">
-  <g opacity="0.38" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <path d="M8,190 C12,150 24,110 34,68 C40,42 44,20 50,0"/>
-    <path d="M92,190 C88,150 76,110 66,68 C60,42 56,20 50,0"/>
-    <path d="M22,190 C26,155 34,118 40,82 C44,55 48,28 50,0"/>
-    <path d="M78,190 C74,155 66,118 60,82 C56,55 52,28 50,0"/>
-    <line x1="14" y1="144" x2="86" y2="144"/>
-    <path d="M14,144 Q50,132 86,144"/>
-    <line x1="26" y1="96" x2="74" y2="96"/>
-    <path d="M26,96 Q50,86 74,96"/>
-    <line x1="36" y1="56" x2="64" y2="56"/>
-    <line x1="44" y1="30" x2="56" y2="30"/>
-    <line x1="50" y1="0" x2="50" y2="-14"/>
-    <line x1="48" y1="-2" x2="52" y2="-2"/>
-    <path d="M8,190 Q20,174 30,190"/>
-    <path d="M70,190 Q80,174 92,190"/>
-    <line x1="4" y1="190" x2="96" y2="190"/>
-  </g>
-  <text text-anchor="middle" x="50" y="206" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">EIFFEL TOWER</text>
-</svg>
+<!-- EIFFEL TOWER — top left -->
+<div class="lm fa" style="position:fixed;left:15px;top:30px;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:140px;height:300px;" viewBox="0 0 120 240">
+    <g opacity="0.38" stroke="#E8593C" stroke-width="1" fill="none">
+      <path d="M2,225 C8,208 18,186 28,160 C36,138 44,114 50,86 C54,62 57,36 60,2"/>
+      <path d="M14,225 C18,210 26,190 35,165 C42,144 49,120 54,92 C57,68 59,42 60,2"/>
+      <path d="M118,225 C112,208 102,186 92,160 C84,138 76,114 70,86 C66,62 63,36 60,2"/>
+      <path d="M106,225 C102,210 94,190 85,165 C78,144 71,120 66,92 C63,68 61,42 60,2"/>
+      <path d="M2,225 Q30,238 48,225"/>
+      <path d="M72,225 Q90,238 118,225"/>
+      <rect x="8" y="153" width="104" height="7"/>
+      <rect x="12" y="159" width="96" height="5"/>
+      <line x1="28" y1="151" x2="52" y2="90"/>
+      <line x1="34" y1="151" x2="56" y2="90"/>
+      <line x1="92" y1="151" x2="68" y2="90"/>
+      <line x1="86" y1="151" x2="64" y2="90"/>
+      <rect x="38" y="85" width="44" height="7"/>
+      <rect x="42" y="91" width="36" height="4"/>
+      <line x1="50" y1="84" x2="58" y2="30"/>
+      <line x1="70" y1="84" x2="62" y2="30"/>
+      <rect x="52" y="24" width="16" height="6"/>
+      <line x1="60" y1="24" x2="60" y2="-12"/>
+      <line x1="0" y1="225" x2="120" y2="225"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">EIFFEL TOWER</p>
+</div>
 
-<!-- SAGRADA FAMILIA — top center-left, medium -->
-<svg class="lm fb" style="position:fixed;left:200px;top:15px;width:85px;height:175px;pointer-events:none;z-index:1;" viewBox="0 0 100 180">
-  <g opacity="0.32" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <line x1="50" y1="160" x2="50" y2="0"/>
-    <line x1="66" y1="160" x2="66" y2="18"/>
-    <line x1="34" y1="160" x2="34" y2="26"/>
-    <line x1="80" y1="160" x2="80" y2="42"/>
-    <line x1="20" y1="160" x2="20" y2="52"/>
-    <polygon points="50,0 44,14 56,14"/>
-    <polygon points="66,18 60,30 72,30"/>
-    <polygon points="34,26 28,38 40,38"/>
-    <polygon points="80,42 74,54 86,54"/>
-    <polygon points="20,52 14,64 26,64"/>
-    <line x1="6" y1="72" x2="94" y2="72"/>
-    <line x1="6" y1="88" x2="94" y2="88"/>
-    <line x1="6" y1="104" x2="94" y2="104"/>
-    <line x1="6" y1="120" x2="94" y2="120"/>
-    <line x1="6" y1="136" x2="94" y2="136"/>
-    <rect x="6" y="136" width="88" height="24"/>
-    <circle cx="50" cy="58" r="9"/>
-    <line x1="50" y1="49" x2="50" y2="67"/>
-    <line x1="41" y1="58" x2="59" y2="58"/>
-    <line x1="44" y1="52" x2="56" y2="64"/>
-    <line x1="56" y1="52" x2="44" y2="64"/>
-    <line x1="2" y1="160" x2="98" y2="160"/>
-  </g>
-  <text text-anchor="middle" x="50" y="174" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">SAGRADA FAMILIA</text>
-</svg>
+<!-- SAGRADA FAMILIA — top center-left -->
+<div class="lm fb" style="position:fixed;left:185px;top:15px;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:160px;height:260px;" viewBox="0 0 155 205">
+    <g opacity="0.32" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <rect x="28" y="0" width="18" height="160"/>
+      <rect x="54" y="0" width="18" height="160"/>
+      <rect x="80" y="0" width="18" height="160"/>
+      <rect x="106" y="0" width="18" height="160"/>
+      <line x1="37" y1="-14" x2="37" y2="-4"/>
+      <line x1="32" y1="-10" x2="42" y2="-10"/>
+      <line x1="63" y1="-14" x2="63" y2="-4"/>
+      <line x1="58" y1="-10" x2="68" y2="-10"/>
+      <line x1="89" y1="-14" x2="89" y2="-4"/>
+      <line x1="84" y1="-10" x2="94" y2="-10"/>
+      <line x1="115" y1="-14" x2="115" y2="-4"/>
+      <line x1="110" y1="-10" x2="120" y2="-10"/>
+      <line x1="34" y1="20" x2="34" y2="90"/>
+      <line x1="40" y1="20" x2="40" y2="90"/>
+      <line x1="60" y1="20" x2="60" y2="90"/>
+      <line x1="66" y1="20" x2="66" y2="90"/>
+      <line x1="86" y1="20" x2="86" y2="90"/>
+      <line x1="92" y1="20" x2="92" y2="90"/>
+      <line x1="112" y1="20" x2="112" y2="90"/>
+      <line x1="118" y1="20" x2="118" y2="90"/>
+      <line x1="28" y1="30" x2="46" y2="30"/>
+      <line x1="28" y1="60" x2="46" y2="60"/>
+      <line x1="28" y1="90" x2="46" y2="90"/>
+      <line x1="54" y1="30" x2="72" y2="30"/>
+      <line x1="54" y1="60" x2="72" y2="60"/>
+      <line x1="54" y1="90" x2="72" y2="90"/>
+      <line x1="80" y1="30" x2="98" y2="30"/>
+      <line x1="80" y1="60" x2="98" y2="60"/>
+      <line x1="80" y1="90" x2="98" y2="90"/>
+      <line x1="106" y1="30" x2="124" y2="30"/>
+      <line x1="106" y1="60" x2="124" y2="60"/>
+      <line x1="106" y1="90" x2="124" y2="90"/>
+      <rect x="46" y="100" width="60" height="60"/>
+      <path d="M60,160 Q76,130 92,160"/>
+      <polygon points="0,160 14,120 28,160"/>
+      <polygon points="124,160 138,120 152,160"/>
+      <polygon points="6,160 14,138 22,160"/>
+      <polygon points="130,160 138,138 146,160"/>
+      <circle cx="10" cy="172" r="5"/>
+      <circle cx="20" cy="172" r="5"/>
+      <circle cx="132" cy="172" r="5"/>
+      <circle cx="142" cy="172" r="5"/>
+      <line x1="0" y1="188" x2="152" y2="188"/>
+      <line x1="4" y1="194" x2="148" y2="194"/>
+      <line x1="8" y1="200" x2="144" y2="200"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">SAGRADA FAMILIA</p>
+</div>
 
-<!-- BIG BEN — top right, medium-large -->
-<svg class="lm fc" style="position:fixed;right:18px;top:18px;width:75px;height:195px;pointer-events:none;z-index:1;" viewBox="0 0 80 200">
-  <g opacity="0.35" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <rect x="16" y="172" width="44" height="14"/>
-    <rect x="20" y="102" width="36" height="72"/>
-    <rect x="13" y="82" width="50" height="22"/>
-    <rect x="9" y="64" width="58" height="20"/>
-    <rect x="6" y="48" width="64" height="18"/>
-    <polygon points="6,48 38,4 70,48"/>
-    <line x1="38" y1="4" x2="38" y2="-6"/>
-    <circle cx="38" cy="114" r="13"/>
-    <line x1="38" y1="103" x2="38" y2="114"/>
-    <line x1="27" y1="114" x2="38" y2="114"/>
-    <line x1="20" y1="92" x2="56" y2="92"/>
-    <line x1="20" y1="132" x2="56" y2="132"/>
-    <line x1="20" y1="158" x2="56" y2="158"/>
-    <rect x="24" y="110" width="9" height="16" rx="4"/>
-    <rect x="43" y="110" width="9" height="16" rx="4"/>
-    <rect x="24" y="140" width="9" height="16" rx="4"/>
-    <rect x="43" y="140" width="9" height="16" rx="4"/>
-    <line x1="4" y1="186" x2="72" y2="186"/>
-  </g>
-  <text text-anchor="middle" x="38" y="198" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">BIG BEN</text>
-</svg>
+<!-- BIG BEN — top right -->
+<div class="lm fc" style="position:fixed;right:18px;top:18px;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:120px;height:290px;" viewBox="0 0 100 270">
+    <g opacity="0.35" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <rect x="18" y="115" width="64" height="130"/>
+      <line x1="24" y1="135" x2="76" y2="135"/>
+      <line x1="24" y1="150" x2="76" y2="150"/>
+      <line x1="24" y1="168" x2="76" y2="168"/>
+      <line x1="24" y1="183" x2="76" y2="183"/>
+      <line x1="24" y1="200" x2="76" y2="200"/>
+      <line x1="24" y1="218" x2="76" y2="218"/>
+      <rect x="10" y="82" width="80" height="35"/>
+      <circle cx="50" cy="100" r="14"/>
+      <circle cx="50" cy="88" r="1.2" fill="#E8593C" opacity="0.5"/>
+      <circle cx="50" cy="112" r="1.2" fill="#E8593C" opacity="0.5"/>
+      <circle cx="36" cy="100" r="1.2" fill="#E8593C" opacity="0.5"/>
+      <circle cx="64" cy="100" r="1.2" fill="#E8593C" opacity="0.5"/>
+      <circle cx="40" cy="91" r="1" fill="#E8593C" opacity="0.5"/>
+      <circle cx="40" cy="109" r="1" fill="#E8593C" opacity="0.5"/>
+      <circle cx="60" cy="91" r="1" fill="#E8593C" opacity="0.5"/>
+      <circle cx="60" cy="109" r="1" fill="#E8593C" opacity="0.5"/>
+      <line x1="50" y1="100" x2="50" y2="90"/>
+      <line x1="50" y1="100" x2="42" y2="100"/>
+      <rect x="14" y="62" width="72" height="22"/>
+      <rect x="8" y="46" width="84" height="18"/>
+      <polygon points="8,46 50,2 92,46"/>
+      <line x1="50" y1="2" x2="50" y2="-8"/>
+      <rect x="14" y="244" width="72" height="10"/>
+      <line x1="8" y1="254" x2="92" y2="254"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">BIG BEN</p>
+</div>
 
-<!-- STATUE OF LIBERTY — mid left -->
-<svg class="lm fd" style="position:fixed;left:8px;top:38%;width:80px;height:180px;pointer-events:none;z-index:1;" viewBox="0 0 90 185">
-  <g opacity="0.3" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <rect x="18" y="148" width="54" height="18"/>
-    <rect x="12" y="136" width="66" height="14"/>
-    <rect x="6" y="158" width="78" height="12"/>
-    <path d="M26,136 C22,115 18,88 20,65 C22,48 28,36 38,26"/>
-    <path d="M64,136 C68,115 72,88 70,65 C68,48 62,36 52,26"/>
-    <line x1="36" y1="136" x2="33" y2="65"/>
-    <line x1="45" y1="136" x2="45" y2="58"/>
-    <line x1="54" y1="136" x2="57" y2="65"/>
-    <line x1="26" y1="105" x2="64" y2="105"/>
-    <ellipse cx="45" cy="20" rx="13" ry="11"/>
-    <line x1="45" y1="9" x2="45" y2="1"/>
-    <line x1="38" y1="11" x2="35" y2="3"/>
-    <line x1="52" y1="11" x2="55" y2="3"/>
-    <line x1="34" y1="16" x2="30" y2="8"/>
-    <line x1="56" y1="16" x2="60" y2="8"/>
-    <path d="M57,34 Q70,24 73,14"/>
-    <line x1="73" y1="14" x2="73" y2="6"/>
-    <line x1="70" y1="6" x2="76" y2="6"/>
-    <rect x="24" y="50" width="14" height="20" rx="2" transform="rotate(-15,31,60)"/>
-    <line x1="6" y1="170" x2="84" y2="170"/>
-  </g>
-  <text text-anchor="middle" x="45" y="182" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">STATUE OF LIBERTY</text>
-</svg>
+<!-- STONEHENGE — mid left -->
+<div class="lm fd" style="position:fixed;left:5px;top:38%;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:190px;height:180px;" viewBox="0 0 240 150">
+    <g opacity="0.3" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <rect x="0" y="55" width="16" height="70" rx="2"/>
+      <rect x="22" y="48" width="16" height="77" rx="2"/>
+      <rect x="44" y="44" width="16" height="81" rx="2"/>
+      <rect x="66" y="42" width="16" height="83" rx="2"/>
+      <rect x="88" y="42" width="16" height="83" rx="2"/>
+      <rect x="110" y="44" width="16" height="81" rx="2"/>
+      <rect x="132" y="48" width="16" height="77" rx="2"/>
+      <rect x="154" y="55" width="16" height="70" rx="2"/>
+      <rect x="174" y="62" width="16" height="63" rx="2"/>
+      <rect x="200" y="55" width="16" height="70" rx="2"/>
+      <rect x="22" y="44" width="38" height="8" rx="2"/>
+      <rect x="60" y="38" width="50" height="8" rx="2"/>
+      <rect x="110" y="40" width="42" height="8" rx="2"/>
+      <rect x="154" y="48" width="62" height="8" rx="2"/>
+      <rect x="72" y="22" width="18" height="103" rx="2"/>
+      <rect x="130" y="22" width="18" height="103" rx="2"/>
+      <rect x="70" y="14" width="80" height="10" rx="2"/>
+      <rect x="86" y="30" width="14" height="95" rx="2"/>
+      <rect x="120" y="30" width="14" height="95" rx="2"/>
+      <rect x="84" y="22" width="52" height="10" rx="2"/>
+      <rect x="100" y="110" width="20" height="8" rx="1"/>
+      <path d="M0,125 Q110,118 220,125"/>
+      <line x1="0" y1="128" x2="220" y2="128"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">STONEHENGE</p>
+</div>
 
-<!-- BURJ KHALIFA — mid right, tall — KEEP EXISTING -->
-<svg class="lm fe" style="position:fixed;right:5px;top:200px;width:100px;height:340px;pointer-events:none;z-index:1;" viewBox="-4 0 192 490">
-  <g opacity="0.28" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <line x1="90" y1="0" x2="90" y2="18"/>
-    <line x1="88" y1="18" x2="92" y2="18"/>
-    <polyline points="88,18 84,28 78,45 71,68 65,95 59,122 55,148 53,165 53,178 47,178 47,225 42,225 42,268 37,268 37,312 31,312 31,358 27,358 27,450"/>
-    <polyline points="92,18 96,28 102,45 109,68 115,95 121,122 125,148 127,165 127,178 133,178 133,225 138,225 138,268 143,268 143,312 149,312 149,358 153,358 153,450"/>
-    <polyline points="27,450 18,450 18,462 8,462 8,474 -4,474 -4,482"/>
-    <polyline points="153,450 162,450 162,462 172,462 172,474 184,474 184,482"/>
-    <line x1="-4" y1="482" x2="184" y2="482"/>
-    <line x1="53" y1="450" x2="86" y2="22"/>
-    <line x1="65" y1="450" x2="88" y2="22"/>
-    <line x1="77" y1="450" x2="89" y2="22"/>
-    <line x1="103" y1="450" x2="91" y2="22"/>
-    <line x1="115" y1="450" x2="92" y2="22"/>
-    <line x1="127" y1="450" x2="94" y2="22"/>
-    <line x1="31" y1="310" x2="149" y2="310"/>
-    <line x1="31" y1="315" x2="149" y2="315"/>
-    <line x1="37" y1="266" x2="143" y2="266"/>
-    <line x1="37" y1="271" x2="143" y2="271"/>
-    <line x1="42" y1="223" x2="138" y2="223"/>
-    <line x1="42" y1="228" x2="138" y2="228"/>
-    <line x1="47" y1="176" x2="133" y2="176"/>
-    <line x1="47" y1="181" x2="133" y2="181"/>
-    <line x1="53" y1="146" x2="127" y2="146"/>
-    <line x1="53" y1="151" x2="127" y2="151"/>
-    <line x1="58" y1="120" x2="122" y2="120"/>
-    <line x1="58" y1="125" x2="122" y2="125"/>
-    <line x1="63" y1="93" x2="117" y2="93"/>
-    <line x1="63" y1="98" x2="117" y2="98"/>
-    <line x1="68" y1="66" x2="112" y2="66"/>
-    <line x1="68" y1="71" x2="112" y2="71"/>
-    <line x1="73" y1="43" x2="107" y2="43"/>
-    <line x1="73" y1="48" x2="107" y2="48"/>
-    <line x1="27" y1="450" x2="153" y2="450"/>
-    <line x1="18" y1="462" x2="162" y2="462"/>
-    <line x1="8" y1="474" x2="172" y2="474"/>
-  </g>
-  <text text-anchor="middle" x="90" y="495" font-family="monospace" font-size="9" fill="#E8593C" opacity="0.45" letter-spacing="1">BURJ KHALIFA</text>
-</svg>
+<!-- BURJ KHALIFA — mid right -->
+<div class="lm fe" style="position:fixed;right:5px;top:320px;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:140px;height:460px;" viewBox="-4 0 192 490">
+    <g opacity="0.28" stroke="#E8593C" stroke-width="0.85" fill="none">
+      <line x1="90" y1="0" x2="90" y2="18"/>
+      <line x1="88" y1="18" x2="92" y2="18"/>
+      <polyline points="88,18 84,28 78,45 71,68 65,95 59,122 55,148 53,165 53,178 47,178 47,225 42,225 42,268 37,268 37,312 31,312 31,358 27,358 27,450"/>
+      <polyline points="92,18 96,28 102,45 109,68 115,95 121,122 125,148 127,165 127,178 133,178 133,225 138,225 138,268 143,268 143,312 149,312 149,358 153,358 153,450"/>
+      <polyline points="27,450 18,450 18,462 8,462 8,474 -4,474 -4,482"/>
+      <polyline points="153,450 162,450 162,462 172,462 172,474 184,474 184,482"/>
+      <line x1="-4" y1="482" x2="184" y2="482"/>
+      <line x1="53" y1="450" x2="86" y2="22"/>
+      <line x1="65" y1="450" x2="88" y2="22"/>
+      <line x1="77" y1="450" x2="89" y2="22"/>
+      <line x1="103" y1="450" x2="91" y2="22"/>
+      <line x1="115" y1="450" x2="92" y2="22"/>
+      <line x1="127" y1="450" x2="94" y2="22"/>
+      <line x1="31" y1="310" x2="149" y2="310"/>
+      <line x1="31" y1="315" x2="149" y2="315"/>
+      <line x1="37" y1="266" x2="143" y2="266"/>
+      <line x1="37" y1="271" x2="143" y2="271"/>
+      <line x1="42" y1="223" x2="138" y2="223"/>
+      <line x1="42" y1="228" x2="138" y2="228"/>
+      <line x1="47" y1="176" x2="133" y2="176"/>
+      <line x1="47" y1="181" x2="133" y2="181"/>
+      <line x1="53" y1="146" x2="127" y2="146"/>
+      <line x1="53" y1="151" x2="127" y2="151"/>
+      <line x1="58" y1="120" x2="122" y2="120"/>
+      <line x1="58" y1="125" x2="122" y2="125"/>
+      <line x1="63" y1="93" x2="117" y2="93"/>
+      <line x1="63" y1="98" x2="117" y2="98"/>
+      <line x1="68" y1="66" x2="112" y2="66"/>
+      <line x1="68" y1="71" x2="112" y2="71"/>
+      <line x1="73" y1="43" x2="107" y2="43"/>
+      <line x1="73" y1="48" x2="107" y2="48"/>
+      <line x1="27" y1="450" x2="153" y2="450"/>
+      <line x1="18" y1="462" x2="162" y2="462"/>
+      <line x1="8" y1="474" x2="172" y2="474"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">BURJ KHALIFA</p>
+</div>
 
-<!-- PYRAMIDS OF GIZA — center left lower -->
-<svg class="lm ff" style="position:fixed;left:20px;top:62%;width:130px;height:120px;pointer-events:none;z-index:1;" viewBox="0 0 200 130">
-  <g opacity="0.28" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <polygon points="80,0 0,110 160,110"/>
-    <line x1="8" y1="98" x2="152" y2="98"/>
-    <line x1="18" y1="86" x2="142" y2="86"/>
-    <line x1="28" y1="74" x2="132" y2="74"/>
-    <line x1="38" y1="62" x2="122" y2="62"/>
-    <line x1="48" y1="50" x2="112" y2="50"/>
-    <line x1="58" y1="38" x2="102" y2="38"/>
-    <line x1="68" y1="26" x2="92" y2="26"/>
-    <line x1="75" y1="14" x2="85" y2="14"/>
-    <polygon points="178,110 140,55 216,55"/>
-    <line x1="143" y1="88" x2="213" y2="88"/>
-    <line x1="148" y1="72" x2="208" y2="72"/>
-    <line x1="160" y1="110" x2="220" y2="110"/>
-    <line x1="0" y1="110" x2="220" y2="110"/>
-    <line x1="0" y1="118" x2="220" y2="118"/>
-  </g>
-  <text text-anchor="middle" x="100" y="128" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">PYRAMIDS OF GIZA</text>
-</svg>
+<!-- PYRAMIDS OF GIZA — lower left -->
+<div class="lm ff" style="position:fixed;left:5px;top:62%;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:220px;height:160px;" viewBox="0 0 220 120">
+    <g opacity="0.28" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <polygon points="100,0 20,110 180,110"/>
+      <polygon points="50,35 0,110 100,110"/>
+      <polygon points="178,55 140,110 216,110"/>
+      <line x1="0" y1="110" x2="220" y2="110"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">PYRAMIDS OF GIZA</p>
+</div>
 
 <!-- COLOSSEUM — lower left -->
-<svg class="lm fg" style="position:fixed;left:0px;top:75%;width:150px;height:120px;pointer-events:none;z-index:1;" viewBox="0 0 180 120">
-  <g opacity="0.28" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <ellipse cx="90" cy="52" rx="88" ry="46"/>
-    <ellipse cx="90" cy="52" rx="70" ry="35"/>
-    <ellipse cx="90" cy="52" rx="52" ry="26"/>
-    <ellipse cx="90" cy="52" rx="34" ry="17"/>
-    <line x1="2" y1="52" x2="178" y2="52"/>
-    <line x1="4" y1="35" x2="176" y2="35"/>
-    <line x1="4" y1="69" x2="176" y2="69"/>
-    <line x1="20" y1="20" x2="160" y2="20"/>
-    <line x1="20" y1="84" x2="160" y2="84"/>
-    <line x1="12" y1="26" x2="12" y2="78"/>
-    <line x1="26" y1="16" x2="26" y2="88"/>
-    <line x1="42" y1="10" x2="42" y2="94"/>
-    <line x1="58" y1="8" x2="58" y2="96"/>
-    <line x1="74" y1="7" x2="74" y2="97"/>
-    <line x1="90" y1="6" x2="90" y2="98"/>
-    <line x1="106" y1="7" x2="106" y2="97"/>
-    <line x1="122" y1="8" x2="122" y2="96"/>
-    <line x1="138" y1="10" x2="138" y2="94"/>
-    <line x1="154" y1="16" x2="154" y2="88"/>
-    <line x1="168" y1="26" x2="168" y2="78"/>
-  </g>
-  <text text-anchor="middle" x="90" y="112" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">COLOSSEUM</text>
-</svg>
+<div class="lm fg" style="position:fixed;left:0px;top:76%;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:230px;height:180px;" viewBox="0 0 230 150">
+    <g opacity="0.28" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <path d="M0,140 Q0,80 22,50 Q55,12 110,6 Q160,2 190,24 Q210,40 210,75 L210,140"/>
+      <path d="M0,95 Q55,58 110,54 Q160,50 210,75"/>
+      <path d="M0,120 Q55,88 110,85 Q160,82 210,100"/>
+      <path d="M8,140 Q8,122 20,116 Q32,110 32,140"/>
+      <path d="M34,140 Q34,122 46,116 Q58,110 58,140"/>
+      <path d="M60,140 Q60,122 72,116 Q84,110 84,140"/>
+      <path d="M86,140 Q86,122 98,116 Q110,110 110,140"/>
+      <path d="M112,140 Q112,123 124,117 Q136,111 136,140"/>
+      <path d="M138,140 Q138,124 150,118 Q162,112 162,140"/>
+      <path d="M164,140 Q164,126 174,120 Q184,114 184,140"/>
+      <path d="M186,140 Q186,128 196,123 Q206,118 206,140"/>
+      <path d="M6,98 Q6,84 16,80 Q26,76 26,94"/>
+      <path d="M28,96 Q28,82 38,78 Q48,74 48,92"/>
+      <path d="M50,94 Q50,80 60,76 Q70,72 70,90"/>
+      <path d="M72,93 Q72,79 82,75 Q92,71 92,89"/>
+      <path d="M94,92 Q94,78 104,74 Q114,70 114,88"/>
+      <path d="M116,91 Q116,77 126,73 Q136,69 136,87"/>
+      <path d="M138,90 Q138,76 148,72 Q158,68 158,86"/>
+      <path d="M160,90 Q160,76 170,72 Q180,68 180,86"/>
+      <path d="M182,91 Q182,77 192,73 Q202,69 202,88"/>
+      <path d="M188,72 Q196,65 202,55 Q204,47 200,42"/>
+      <path d="M200,42 Q194,36 188,40 Q184,44 182,53"/>
+      <line x1="188" y1="72" x2="195" y2="82"/>
+      <line x1="195" y1="69" x2="205" y2="75"/>
+      <path d="M205,98 Q215,88 218,108 L218,140 Q214,140 208,140"/>
+      <line x1="0" y1="140" x2="220" y2="140"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">COLOSSEUM</p>
+</div>
 
-<!-- SYDNEY OPERA HOUSE — center right lower -->
-<svg class="lm fh" style="position:fixed;right:20px;top:58%;width:130px;height:120px;pointer-events:none;z-index:1;" viewBox="0 0 160 130">
-  <g opacity="0.28" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <rect x="0" y="102" width="160" height="10"/>
-    <rect x="4" y="110" width="152" height="8"/>
-    <path d="M15,102 Q20,72 38,40 Q50,16 62,6 Q56,42 46,102"/>
-    <path d="M46,102 Q54,55 62,6 Q70,28 72,102"/>
-    <path d="M68,102 Q72,70 86,44 Q94,24 102,16 Q98,50 88,102"/>
-    <path d="M88,102 Q94,58 102,16 Q110,38 112,102"/>
-    <path d="M6,102 Q8,84 16,66 Q20,54 24,48 Q22,72 20,102"/>
-    <line x1="28" y1="72" x2="24" y2="102"/>
-    <line x1="38" y1="46" x2="36" y2="102"/>
-    <line x1="78" y1="68" x2="76" y2="102"/>
-    <line x1="90" y1="46" x2="88" y2="102"/>
-    <line x1="0" y1="122" x2="160" y2="122"/>
-    <path d="M0,128 Q40,123 80,128 Q120,133 160,128"/>
-  </g>
-  <text text-anchor="middle" x="80" y="132" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">SYDNEY OPERA HOUSE</text>
-</svg>
+<!-- SYDNEY OPERA HOUSE — lower center-right -->
+<div class="lm fh" style="position:fixed;right:60px;top:68%;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:280px;height:170px;" viewBox="0 0 580 210">
+    <g opacity="0.28" stroke="#E8593C" stroke-width="1.2" fill="none">
+      <rect x="0" y="168" width="540" height="10"/>
+      <rect x="0" y="158" width="540" height="12"/>
+      <rect x="0" y="148" width="36" height="12"/>
+      <rect x="0" y="140" width="24" height="10"/>
+      <path d="M36,158 C34,142 36,122 44,104 C50,90 62,78 74,74"/>
+      <path d="M74,74 C76,92 74,118 68,140 C64,152 62,158 76,158"/>
+      <line x1="36" y1="158" x2="76" y2="158"/>
+      <path d="M72,158 C68,136 70,106 82,78 C92,54 108,34 126,26"/>
+      <path d="M126,26 C130,50 128,84 120,116 C114,140 108,154 100,158"/>
+      <line x1="72" y1="158" x2="100" y2="158"/>
+      <path d="M96,158 C90,126 92,88 108,52 C122,20 148,-2 178,0"/>
+      <path d="M178,0 C184,30 182,72 172,110 C164,140 154,156 136,158"/>
+      <line x1="96" y1="158" x2="136" y2="158"/>
+      <path d="M130,158 C122,118 124,72 142,34 C158,-2 190,-20 228,0"/>
+      <path d="M228,0 C236,38 232,88 218,130 C206,160 194,166 168,158"/>
+      <line x1="130" y1="158" x2="168" y2="158"/>
+      <path d="M310,158 C306,144 308,126 316,110 C324,96 338,86 352,82"/>
+      <path d="M352,82 C358,98 356,122 348,142 C344,154 340,160 328,158"/>
+      <line x1="310" y1="158" x2="328" y2="158"/>
+      <path d="M340,158 C338,148 340,134 348,120 C356,108 368,100 380,98"/>
+      <path d="M380,98 C386,112 384,130 376,146 C372,156 366,160 358,158"/>
+      <line x1="340" y1="158" x2="358" y2="158"/>
+      <rect x="168" y="148" width="372" height="12"/>
+      <line x1="0" y1="182" x2="540" y2="182"/>
+      <path d="M0,190 Q135,184 270,190 Q405,196 540,190"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">SYDNEY OPERA HOUSE</p>
+</div>
 
 <!-- TAJ MAHAL — lower center -->
-<svg class="lm fi" style="position:fixed;left:35%;top:78%;width:130px;height:150px;pointer-events:none;z-index:1;" viewBox="0 0 165 160">
-  <g opacity="0.26" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <path d="M44,88 Q82,32 120,88"/>
-    <ellipse cx="82" cy="30" rx="10" ry="16"/>
-    <line x1="82" y1="14" x2="82" y2="6"/>
-    <rect x="30" y="88" width="104" height="58"/>
-    <rect x="6" y="58" width="18" height="88"/>
-    <ellipse cx="15" cy="58" rx="9" ry="5"/>
-    <path d="M7,58 Q15,42 23,58"/>
-    <line x1="15" y1="53" x2="15" y2="44"/>
-    <rect x="141" y="58" width="18" height="88"/>
-    <ellipse cx="150" cy="58" rx="9" ry="5"/>
-    <path d="M142,58 Q150,42 158,58"/>
-    <line x1="150" y1="53" x2="150" y2="44"/>
-    <path d="M30,88 Q44,70 58,88"/>
-    <ellipse cx="44" cy="70" rx="7" ry="10"/>
-    <path d="M106,88 Q120,70 134,88"/>
-    <ellipse cx="120" cy="70" rx="7" ry="10"/>
-    <path d="M58,146 Q82,112 106,146"/>
-    <path d="M36,146 Q50,128 64,146"/>
-    <path d="M100,146 Q114,128 128,146"/>
-    <rect x="42" y="100" width="20" height="30" rx="10"/>
-    <rect x="102" y="100" width="20" height="30" rx="10"/>
-    <rect x="72" y="96" width="20" height="36" rx="10"/>
-    <line x1="0" y1="146" x2="165" y2="146"/>
-    <line x1="55" y1="152" x2="110" y2="152"/>
-    <line x1="48" y1="158" x2="117" y2="158"/>
-  </g>
-  <text text-anchor="middle" x="82" y="162" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">TAJ MAHAL</text>
-</svg>
+<div class="lm fi" style="position:fixed;left:32%;top:78%;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:190px;height:210px;" viewBox="0 0 145 165">
+    <g opacity="0.26" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <path d="M58,85 C50,72 44,58 46,44 C48,30 55,18 70,10 C85,18 92,30 94,44 C96,58 90,72 82,85"/>
+      <line x1="70" y1="10" x2="70" y2="2"/>
+      <path d="M52,72 Q70,64 88,72"/>
+      <path d="M48,58 Q70,50 92,58"/>
+      <rect x="30" y="85" width="80" height="65"/>
+      <rect x="6" y="55" width="16" height="95"/>
+      <path d="M6,55 C4,44 6,34 14,26 C22,34 24,44 22,55"/>
+      <ellipse cx="14" cy="26" rx="6" ry="9"/>
+      <line x1="14" y1="17" x2="14" y2="10"/>
+      <rect x="118" y="55" width="16" height="95"/>
+      <path d="M118,55 C116,44 118,34 126,26 C134,34 136,44 134,55"/>
+      <ellipse cx="126" cy="26" rx="6" ry="9"/>
+      <line x1="126" y1="17" x2="126" y2="10"/>
+      <path d="M30,85 C26,76 26,66 30,58 C34,50 40,46 46,44 C52,46 56,50 58,58 C62,66 60,76 58,85"/>
+      <path d="M82,85 C80,76 78,66 82,58 C86,50 90,46 94,44 C100,46 104,50 106,58 C110,66 108,76 106,85"/>
+      <line x1="44" y1="44" x2="44" y2="38"/>
+      <line x1="96" y1="44" x2="96" y2="38"/>
+      <path d="M50,150 Q70,118 90,150"/>
+      <path d="M34,150 Q44,132 54,150"/>
+      <path d="M86,150 Q96,132 106,150"/>
+      <rect x="44" y="100" width="18" height="30" rx="9"/>
+      <rect x="78" y="100" width="18" height="30" rx="9"/>
+      <rect x="61" y="96" width="18" height="36" rx="9"/>
+      <line x1="30" y1="100" x2="110" y2="100"/>
+      <line x1="3" y1="80" x2="25" y2="80"/>
+      <line x1="115" y1="80" x2="137" y2="80"/>
+      <line x1="0" y1="150" x2="140" y2="150"/>
+      <rect x="0" y="153" width="140" height="6"/>
+      <line x1="0" y1="159" x2="140" y2="159"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">TAJ MAHAL</p>
+</div>
 
 <!-- GOLDEN GATE — lower right -->
-<svg class="lm fj" style="position:fixed;right:5px;bottom:60px;width:140px;height:130px;pointer-events:none;z-index:1;" viewBox="0 0 220 140">
-  <g opacity="0.26" stroke="#E8593C" stroke-width="0.85" fill="none">
-    <line x1="0" y1="104" x2="220" y2="104"/>
-    <line x1="0" y1="110" x2="220" y2="110"/>
-    <rect x="34" y="22" width="18" height="84"/>
-    <line x1="30" y1="42" x2="56" y2="42"/>
-    <line x1="30" y1="60" x2="56" y2="60"/>
-    <line x1="30" y1="78" x2="56" y2="78"/>
-    <polygon points="34,22 43,4 52,22"/>
-    <rect x="168" y="22" width="18" height="84"/>
-    <line x1="164" y1="42" x2="190" y2="42"/>
-    <line x1="164" y1="60" x2="190" y2="60"/>
-    <line x1="164" y1="78" x2="190" y2="78"/>
-    <polygon points="168,22 177,4 186,22"/>
-    <path d="M43,8 Q110,36 177,8"/>
-    <line x1="43" y1="14" x2="0" y2="104"/>
-    <line x1="43" y1="22" x2="16" y2="104"/>
-    <line x1="43" y1="32" x2="34" y2="104"/>
-    <line x1="43" y1="44" x2="43" y2="104"/>
-    <line x1="177" y1="14" x2="220" y2="104"/>
-    <line x1="177" y1="22" x2="204" y2="104"/>
-    <line x1="177" y1="32" x2="186" y2="104"/>
-    <line x1="177" y1="44" x2="177" y2="104"/>
-    <line x1="78" y1="28" x2="78" y2="104"/>
-    <line x1="96" y1="24" x2="96" y2="104"/>
-    <line x1="110" y1="22" x2="110" y2="104"/>
-    <line x1="124" y1="24" x2="124" y2="104"/>
-    <line x1="142" y1="28" x2="142" y2="104"/>
-    <line x1="0" y1="122" x2="220" y2="122"/>
-    <path d="M0,130 Q55,124 110,130 Q165,136 220,130"/>
-  </g>
-  <text text-anchor="middle" x="110" y="138" font-family="monospace" font-size="7" fill="#E8593C" opacity="0.45" letter-spacing="1">GOLDEN GATE</text>
-</svg>
+<div class="lm fj" style="position:fixed;right:5px;bottom:55px;pointer-events:none;z-index:1;text-align:center;">
+  <svg style="width:230px;height:170px;" viewBox="0 0 360 155">
+    <g opacity="0.26" stroke="#E8593C" stroke-width="0.9" fill="none">
+      <line x1="0" y1="104" x2="360" y2="104"/>
+      <line x1="0" y1="110" x2="360" y2="110"/>
+      <rect x="34" y="22" width="18" height="84"/>
+      <line x1="30" y1="42" x2="56" y2="42"/>
+      <line x1="30" y1="60" x2="56" y2="60"/>
+      <line x1="30" y1="78" x2="56" y2="78"/>
+      <polygon points="34,22 43,4 52,22"/>
+      <rect x="168" y="22" width="18" height="84"/>
+      <line x1="164" y1="42" x2="190" y2="42"/>
+      <line x1="164" y1="60" x2="190" y2="60"/>
+      <line x1="164" y1="78" x2="190" y2="78"/>
+      <polygon points="168,22 177,4 186,22"/>
+      <path d="M43,8 Q110,36 177,8"/>
+      <line x1="43" y1="14" x2="0" y2="104"/>
+      <line x1="43" y1="22" x2="16" y2="104"/>
+      <line x1="43" y1="32" x2="34" y2="104"/>
+      <line x1="43" y1="44" x2="43" y2="104"/>
+      <line x1="177" y1="14" x2="360" y2="104"/>
+      <line x1="177" y1="22" x2="344" y2="104"/>
+      <line x1="177" y1="32" x2="186" y2="104"/>
+      <line x1="177" y1="44" x2="177" y2="104"/>
+      <line x1="78" y1="28" x2="78" y2="104"/>
+      <line x1="96" y1="24" x2="96" y2="104"/>
+      <line x1="110" y1="22" x2="110" y2="104"/>
+      <line x1="124" y1="24" x2="124" y2="104"/>
+      <line x1="142" y1="28" x2="142" y2="104"/>
+      <rect x="34" y="104" width="18" height="16"/>
+      <rect x="168" y="104" width="18" height="16"/>
+      <line x1="28" y1="112" x2="56" y2="112"/>
+      <line x1="162" y1="112" x2="190" y2="112"/>
+      <path d="M0,128 Q30,122 60,128"/>
+      <path d="M300,128 Q330,122 360,128"/>
+      <line x1="0" y1="132" x2="360" y2="132"/>
+    </g>
+  </svg>
+  <p style="font-family:monospace;font-size:12px;color:#E8593C;opacity:0.7;letter-spacing:1px;margin:10px 0 0;">GOLDEN GATE BRIDGE</p>
+</div>
 
 <!--========= HERO ==========-->
 <section class="hero">
