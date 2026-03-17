@@ -205,5 +205,5 @@ The frontend has meaningful complexity (slideshow, autocomplete, toggles, share 
 **Ali Jabbar**
 
 - 🔗 [GitHub](https://github.com/Ali-Jabbar-CS)
-- 💼 [LinkedIn](www.linkedin.com/in/ali-jabbar-8b22b5209)
+- 💼 [LinkedIn](https://www.linkedin.com/in/ali-jabbar-8b22b5209)
 - 📧 alimazin904@gmail.com
