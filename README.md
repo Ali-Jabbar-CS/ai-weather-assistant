@@ -20,7 +20,7 @@ Search any city → get live weather data → receive an AI-written description 
 - **Image slideshow** — 2 unique images generated per city and cycled automatically
 - **Exact local time** — displays the precise local time at the searched city
 - **°F / °C toggle** and **12hr / 24hr toggle** for user preferences
-- **City autocomplete** — 300+ cities with keyboard navigation
+- **City autocomplete** — 12,000+ cities with keyboard navigation
 - **Shareable results** — generate a unique URL for any weather result (images included)
 - **Search history** — last 8 searches saved locally with thumbnails
 - **Animated landmark decorations** — 10 iconic world landmarks float around the page
