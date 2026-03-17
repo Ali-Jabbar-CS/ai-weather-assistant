@@ -238,11 +238,13 @@
         margin-top: 8px;
     }
 
-    .results {
+   .results {
   display: none;
   max-width: 900px;
   margin: 0 auto;
   padding: 0 20px 80px;
+  position: relative;
+  z-index: 2;
 }
     .results.visible { display: block;}
 
@@ -367,6 +369,7 @@
   margin-bottom: 24px;
   min-height: 400px;
   background: rgba(255,255,255,0.03);
+  z-index: 2;
 }
 
 .slide {
@@ -693,7 +696,7 @@
 </div>
 
 <!-- TAJ MAHAL — lower center -->
-<div class="lm fi" style="position:fixed;left:32%;top:78%;pointer-events:none;z-index:1;text-align:center;">
+<div class="lm fi" style="position:fixed;left:32%;top:78%;pointer-events:none;z-index:0;text-align:center;">
   <svg style="width:190px;height:210px;" viewBox="0 0 145 165">
     <g opacity="0.26" stroke="#E8593C" stroke-width="0.9" fill="none">
       <path d="M58,85 C50,72 44,58 46,44 C48,30 55,18 70,10 C85,18 92,30 94,44 C96,58 90,72 82,85"/>
@@ -813,7 +816,7 @@
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.2);">·</span>
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">AI WEATHER DEPICTIONS</span>
   <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.2);">·</span>
-  <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">300+ CITIES</span>
+  <span style="font-family:'Courier New',monospace;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;white-space:nowrap;">12,000+ Cities</span>
 </div>
 
 
@@ -831,6 +834,37 @@
     <p class="loading-step" id="loading-step">Fetching weather data...</p>
  </div>
 
+ <!-- ========== HISTORY PANEL ========== -->
+<div id="history-panel" style="
+  max-width:900px;
+  margin:0 auto 24px;
+  padding:0 20px;
+  display:none;
+">
+  <button onclick="toggleHistory()" style="
+    background:none;
+    border:none;
+    color:rgba(255,255,255,0.35);
+    font-family:'Courier New',monospace;
+    font-size:11px;
+    letter-spacing:2px;
+    cursor:pointer;
+    padding:0;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  ">
+    <span id="history-arrow">▶</span> RECENT SEARCHES
+  </button>
+ <div id="history-cards" style="
+  display:none;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;
+">
+  </div>
+</div>
+
  <!-- ========== RESULTS ========== -->
  <section class="results" id="results">
   <div class="image-slideshow fade-up fade-up-delay-1">
@@ -846,6 +880,29 @@
     <button class="slide-dot" onclick="goToSlide(1)"></button>
   
   </div>
+  <!-- Share button -->
+<div style="text-align:center;margin:16px 0 24px;">
+  <button id="share-btn" onclick="shareResult()" style="
+    background:rgba(232,89,60,0.12);
+    border:1px solid rgba(232,89,60,0.35);
+    color:#E8593C;
+    border-radius:30px;
+    padding:10px 32px;
+    font-family:'Courier New',monospace;
+    font-size:12px;
+    letter-spacing:2px;
+    cursor:pointer;
+    transition:all 0.2s;
+  ">SHARE THIS WEATHER →</button>
+  <p id="share-confirm" style="
+    font-family:'Courier New',monospace;
+    font-size:11px;
+    color:rgba(232,89,60,0.7);
+    letter-spacing:1px;
+    margin-top:8px;
+    display:none;
+  ">LINK COPIED TO CLIPBOARD</p>
+</div>
 
   <div class="stats-row fade-up fade-up-delay-2">
     <div class="stat-card">
@@ -925,11 +982,9 @@
 
 
 
-<!--============== JAVASCRIPT ==============-->
-
 <script>
 
-    const CITIES = [
+const CITIES = [
   "Abu Dhabi","Accra","Addis Ababa","Adelaide","Agra","Ahmedabad","Algiers",
   "Almaty","Amman","Amsterdam","Anchorage","Ankara","Antananarivo","Apia",
   "Ashgabat","Asmara","Asuncion","Athens","Atlanta","Auckland","Austin",
@@ -964,31 +1019,34 @@
   "Tirana","Tokyo","Toronto","Tripoli","Tunis","Ulaanbaatar","Vancouver",
   "Vienna","Vientiane","Vilnius","Warsaw","Washington","Wellington",
   "Windhoek","Winnipeg","Yamoussoukro","Yaounde","Yerevan","Zagreb",
-  "Zurich","Accra","Aleppo","Alexandria","Ankara","Antwerp","Bangalore",
-  "Birmingham","Bologna","Bordeaux","Bristol","Calgary","Cape Coast",
-  "Casablanca","Chengdu","Chiang Mai","Chongqing","Cleveland","Cologne",
-  "Columbus","Dakar","Detroit","Durban","Dusseldorf","Florence","Frankfurt",
-  "Fukuoka","Gdansk","Guangzhou","Hamburg","Hiroshima","Izmir","Jaipur",
-  "Kampala","Kano","Krakow","Kumasi","Kyiv","Leeds","Lille","Liverpool",
-  "Lyon","Mecca","Medina","Memphis","Minneapolis","Monterrey","Nanjing",
-  "Naples","Nice","Oman","Orlando","Palermo","Phoenix","Pittsburgh",
-  "Portland","Pune","Recife","Sacramento","Salzburg","San Salvador",
+  "Zurich","Aleppo","Alexandria","Antwerp","Bangalore","Birmingham",
+  "Bologna","Bordeaux","Bristol","Cape Coast","Chengdu","Chiang Mai",
+  "Chongqing","Cleveland","Cologne","Columbus","Dakar","Detroit","Durban",
+  "Dusseldorf","Florence","Frankfurt","Fukuoka","Gdansk","Guangzhou",
+  "Hamburg","Hiroshima","Izmir","Jaipur","Kano","Krakow","Kumasi","Kyiv",
+  "Leeds","Lille","Liverpool","Lyon","Mecca","Medina","Memphis",
+  "Minneapolis","Monterrey","Nanjing","Naples","Nice","Orlando","Palermo",
+  "Pittsburgh","Pune","Recife","Sacramento","Salzburg","San Salvador",
   "Sapporo","Seville","Shenzhen","St. Petersburg","Stuttgart","Suzhou",
   "Tampa","Tel Aviv","Thessaloniki","Tianjin","Turin","Valencia",
-  "Venice","Vladivostok","Wuhan","Xi'an","Yokohama","Zurich"
+  "Venice","Vladivostok","Wuhan","Xi'an","Yokohama"
 ];
 
-  let useFahrenheit = true;
-  let use12hr = true;
-  let weatherData = null;
-  
+let useFahrenheit = true;
+let use12hr = true;
+let weatherData = null;
+let selectedIndex = -1;
+let currentSlide = 0;
+let slideInterval = null;
+let imagesLoaded = 0;
+let searchId = 0;
+let currentImages = { img1: null, img2: null };
+const MAX_HISTORY = 8;
 
-  const input = document.getElementById('city-input');
-  const list = document.getElementById('autocomplete-list');
+const input = document.getElementById('city-input');
+const list  = document.getElementById('autocomplete-list');
 
-
- let selectedIndex = -1;
-
+// ===== AUTOCOMPLETE =====
 input.addEventListener('input', () => {
   const val = input.value.trim().toLowerCase();
   selectedIndex = -1;
@@ -1018,7 +1076,6 @@ input.addEventListener('input', () => {
 
 input.addEventListener('keydown', e => {
   const items = list.querySelectorAll('.autocomplete-item');
-
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
@@ -1044,12 +1101,8 @@ input.addEventListener('keydown', e => {
 function highlightItem() {
   const items = list.querySelectorAll('.autocomplete-item');
   items.forEach((item, i) => {
-    item.style.background = i === selectedIndex
-      ? 'rgba(232,89,60,0.15)'
-      : '';
-    item.style.color = i === selectedIndex
-      ? '#ffffff'
-      : '';
+    item.style.background = i === selectedIndex ? 'rgba(232,89,60,0.15)' : '';
+    item.style.color = i === selectedIndex ? '#ffffff' : '';
   });
   if (selectedIndex >= 0 && items[selectedIndex]) {
     items[selectedIndex].scrollIntoView({ block: 'nearest' });
@@ -1063,60 +1116,47 @@ document.addEventListener('click', e => {
   }
 });
 
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.search-section')) {
-        list.classList.remove('visible');
-    }
-  });
-
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {list.classList.remove('visible'); fetchWeather(); }
-  });
-
-   function toggleUnit() {
-    useFahrenheit = !useFahrenheit;
-    document.getElementById('unit-btn').textContent = useFahrenheit ?  '°F' : '°C';
-    if (weatherData) updateStats();
-  }
-
- function toggleTime() {
-  use12hr = !use12hr;
-  const btn = document.getElementById('time-btn');
-  btn.textContent = use12hr ? '12hr' : '24hr';
-  btn.classList.toggle('active', true);
+// ===== TOGGLES =====
+function toggleUnit() {
+  useFahrenheit = !useFahrenheit;
+  document.getElementById('unit-btn').textContent = useFahrenheit ? '°F' : '°C';
   if (weatherData) updateStats();
 }
 
-  function toC(f) { return ((f - 32) * 5 / 9).toFixed(1); }
+function toggleTime() {
+  use12hr = !use12hr;
+  const btn = document.getElementById('time-btn');
+  btn.textContent = use12hr ? '12hr' : '24hr';
+  if (weatherData) updateStats();
+}
 
-  function formatTemp(f) {
-    return useFahrenheit ? Math.round(f) + '°F' : toC(f) + '°C';
-  }
+function toC(f) { return ((f - 32) * 5 / 9).toFixed(1); }
+
+function formatTemp(f) {
+  return useFahrenheit ? Math.round(f) + '°F' : toC(f) + '°C';
+}
 
 function formatTimeOfDay(t) {
-  if (use12hr) {
-    return weatherData.exactTime12 || t;
-  } else {
-    return weatherData.exactTime24 || t;
-  }
+  if (use12hr) return weatherData.exactTime12 || t;
+  return weatherData.exactTime24 || t;
 }
-  function capitalize(s) {
-    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-  }
 
-  function updateStats() {
-    const d = weatherData;
-    document.getElementById('stat-temp').textContent  = formatTemp(d.tempF);
-    document.getElementById('stat-feels').textContent  = formatTemp(d.feelsLikeF);
-    document.getElementById('stat-humidity').textContent  = d.humidity + '%';
-    document.getElementById('stat-wind').textContent  = Math.round(d.windSpeed) + ' mph';
-    document.getElementById('stat-time').textContent  = formatTimeOfDay(d.timeOfDay);
-    document.getElementById('stat-season').textContent  = capitalize(d.season);
-  }
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
 
-  
+function updateStats() {
+  const d = weatherData;
+  document.getElementById('stat-temp').textContent     = formatTemp(d.tempF);
+  document.getElementById('stat-feels').textContent    = formatTemp(d.feelsLikeF);
+  document.getElementById('stat-humidity').textContent = d.humidity + '%';
+  document.getElementById('stat-wind').textContent     = Math.round(d.windSpeed) + ' mph';
+  document.getElementById('stat-time').textContent     = formatTimeOfDay(d.timeOfDay);
+  document.getElementById('stat-season').textContent   = capitalize(d.season);
+}
 
-  const loadingPhrases = [
+// ===== LOADING PHRASES =====
+const loadingPhrases = [
   'Consulting the clouds...',
   'Reading the atmosphere...',
   'Whispering to the wind...',
@@ -1140,15 +1180,10 @@ function stopLoadingPhrases() {
   if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
 }
 
-
-let currentSlide = 0;
-let slideInterval = null;
-let imagesLoaded = 0;
-let searchId = 0;
-
+// ===== SLIDESHOW =====
 function goToSlide(index) {
   const slides = document.querySelectorAll('.slide');
-  const dots = document.querySelectorAll('.slide-dot');
+  const dots   = document.querySelectorAll('.slide-dot');
   slides[currentSlide].classList.remove('active');
   dots[currentSlide].classList.remove('active');
   currentSlide = index;
@@ -1167,6 +1202,36 @@ function stopSlideshow() {
   if (slideInterval) { clearInterval(slideInterval); slideInterval = null; }
 }
 
+// ===== HELPERS =====
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function blobToThumbnail(blob, maxWidth = 300) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      const scale = maxWidth / img.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = maxWidth;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// ===== MAIN FETCH =====
 async function fetchWeather() {
   const city = input.value.trim();
   if (!city) return;
@@ -1189,31 +1254,38 @@ async function fetchWeather() {
     document.getElementById('description-text').textContent = full.description;
     updateStats();
 
-   // Reset slideshow
+ // Reset slideshow and images
 stopSlideshow();
 currentSlide = 0;
 imagesLoaded = 0;
-document.querySelectorAll('.slide').forEach((s,i) => {
+currentImages = { img1: null, img2: null };
+document.querySelectorAll('.slide').forEach(s => {
   s.src = '';
   s.classList.remove('active');
-  s.filter = 'blur(40px)';
+  s.classList.remove('loaded');
 });
 document.querySelectorAll('.slide-dot').forEach(d => d.classList.remove('active'));
 document.querySelector('.slide').classList.add('active');
 document.querySelector('.slide-dot').classList.add('active');
 
-// Fetch all 3 images — first one loads immediately, then 2 and 3
 const thisSearch = ++searchId;
 
 for (let i = 0; i < 2; i++) {
   fetch('/weather/image?city=' + encodeURIComponent(city))
     .then(r => { if (!r.ok) throw new Error('Image failed'); return r.blob(); })
-    .then(blob => {
+    .then(async blob => {
       if (thisSearch !== searchId) return;
       const img = document.getElementById('result-image-' + i);
       img.classList.remove('loaded');
       img.src = URL.createObjectURL(blob);
       img.onload = () => setTimeout(() => img.classList.add('loaded'), 50);
+
+      const base64 = await blobToBase64(blob);
+      const thumbnail = await blobToThumbnail(blob);
+
+      if (i === 0) { currentImages.img1 = base64; currentImages.thumb1 = thumbnail; }
+      if (i === 1) { currentImages.img2 = base64; currentImages.thumb2 = thumbnail; }
+
       imagesLoaded++;
       if (imagesLoaded === 1) {
         stopLoadingPhrases();
@@ -1226,20 +1298,40 @@ for (let i = 0; i < 2; i++) {
         document.getElementById('results').classList.add('visible');
       }
       if (imagesLoaded === 2) {
-        startSlideshow();
-      }
+  startSlideshow();
+
+  // Save full quality images to backend, thumbnail to localStorage
+  fetch('/api/history', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      city:         weatherData.city,
+      country:      weatherData.country,
+      tempF:        weatherData.tempF,
+      feelsLikeF:   weatherData.feelsLikeF,
+      humidity:     weatherData.humidity,
+      windSpeed:    weatherData.windSpeed,
+      condition:    weatherData.condition,
+      timeOfDay:    weatherData.timeOfDay,
+      season:       weatherData.season,
+      exactTime12:  weatherData.exactTime12,
+      exactTime24:  weatherData.exactTime24,
+      description:  weatherData.description,
+      image1Base64: currentImages.img1,
+      image2Base64: currentImages.img2
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, data.id);
+  })
+  .catch(() => {
+    saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, null);
+  });
+}
     })
     .catch(err => console.log('Image ' + i + ' failed: ' + err.message));
 }
-
-    stopLoadingPhrases();
-    document.getElementById('loading').classList.remove('visible');
-    document.querySelectorAll('.fade-up').forEach(el => {
-      el.style.animation = 'none';
-      el.offsetHeight;
-      el.style.animation = '';
-    });
-    document.getElementById('results').classList.add('visible');
 
   } catch (err) {
     stopLoadingPhrases();
@@ -1248,7 +1340,265 @@ for (let i = 0; i < 2; i++) {
   }
 }
 
-  const canvas = document.getElementById('stars');
+// ===== SEARCH HISTORY =====
+function saveToHistory(data, img1, img2, historyId) {
+  let history = getHistory();
+  const entry = {
+    city:         data.city,
+    country:      data.country,
+    tempF:        data.tempF,
+    feelsLikeF:   data.feelsLikeF,
+    humidity:     data.humidity,
+    windSpeed:    data.windSpeed,
+    condition:    data.condition,
+    timeOfDay:    data.timeOfDay,
+    season:       data.season,
+    exactTime12:  data.exactTime12,
+    exactTime24:  data.exactTime24,
+    description:  data.description,
+    image1Base64: img1,
+    image2Base64: img2,
+    historyId:    historyId,
+    savedAt:      new Date().toISOString()
+  };
+  history = history.filter(h => h.city.toLowerCase() !== data.city.toLowerCase());
+  history.unshift(entry);
+  if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+  try {
+    localStorage.setItem('skyvision-history', JSON.stringify(history));
+  } catch (e) {
+    history = history.slice(0, history.length - 1);
+    try {
+      localStorage.setItem('skyvision-history', JSON.stringify(history));
+    } catch (e2) {
+      localStorage.removeItem('skyvision-history');
+    }
+  }
+  renderHistory();
+}
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('skyvision-history') || '[]');
+  } catch { return []; }
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const panel   = document.getElementById('history-panel');
+  const cards   = document.getElementById('history-cards');
+  if (!history.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  cards.innerHTML = '';
+  history.forEach(entry => {
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px;
+      overflow:hidden;
+      cursor:pointer;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    `;
+    card.onmouseenter = () => {
+      card.style.borderColor = 'rgba(232,89,60,0.4)';
+      card.style.boxShadow = '0 0 16px rgba(232,89,60,0.15)';
+    };
+    card.onmouseleave = () => {
+      card.style.borderColor = 'rgba(255,255,255,0.08)';
+      card.style.boxShadow = 'none';
+    };
+    card.onclick = () => loadFromHistory(entry);
+    const img = entry.image1Base64
+      ? `<img src="data:image/png;base64,${entry.image1Base64}" style="width:100%;height:90px;object-fit:cover;display:block;"/>`
+      : `<div style="width:100%;height:90px;background:rgba(255,255,255,0.03);"></div>`;
+    card.innerHTML = `
+      ${img}
+      <div style="padding:10px 12px;">
+        <p style="font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:14px;color:#fff;margin:0 0 4px;">${entry.city}</p>
+        <p style="font-family:'Courier New',monospace;font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin:0;">${entry.condition.toUpperCase()} · ${Math.round(entry.tempF)}°F</p>
+      </div>
+    `;
+    cards.appendChild(card);
+  });
+}
+
+function toggleHistory() {
+  const cards = document.getElementById('history-cards');
+  const arrow = document.getElementById('history-arrow');
+  const visible = cards.style.display === 'grid';
+  cards.style.display = visible ? 'none' : 'grid';
+  arrow.textContent = visible ? '▶' : '▼';
+}
+
+function loadFromHistory(entry) {
+  weatherData = entry;
+  document.getElementById('city-input').value = entry.city;
+  document.getElementById('overlay-city').textContent = entry.city + ', ' + entry.country;
+  document.getElementById('overlay-condition').textContent =
+    entry.condition + ' . ' + capitalize(entry.timeOfDay) + ' . ' + capitalize(entry.season);
+  document.getElementById('description-text').textContent = entry.description;
+  updateStats();
+
+  stopSlideshow();
+  currentSlide = 0;
+  document.querySelectorAll('.slide').forEach(s => {
+    s.src = '';
+    s.classList.remove('active');
+    s.classList.remove('loaded');
+  });
+  document.querySelectorAll('.slide-dot').forEach(d => d.classList.remove('active'));
+  document.querySelector('.slide').classList.add('active');
+  document.querySelector('.slide-dot').classList.add('active');
+
+  document.querySelectorAll('.fade-up').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = '';
+  });
+  document.getElementById('results').classList.add('visible');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+  if (entry.historyId) {
+    // Fetch full quality images from backend
+    fetch('/api/history/' + entry.historyId)
+      .then(r => r.json())
+      .then(data => {
+        const img0 = document.getElementById('result-image-0');
+        const img1 = document.getElementById('result-image-1');
+
+        if (data.image1Base64) {
+          img0.classList.remove('loaded');
+          img0.src = 'data:image/png;base64,' + data.image1Base64;
+          img0.onload = () => {
+            setTimeout(() => img0.classList.add('loaded'), 50);
+            startSlideshow();
+          };
+        }
+        if (data.image2Base64) {
+          img1.classList.remove('loaded');
+          img1.src = 'data:image/png;base64,' + data.image2Base64;
+          img1.onload = () => setTimeout(() => img1.classList.add('loaded'), 50);
+        }
+      })
+      .catch(() => {
+        // Fall back to thumbnail if backend fails
+        const img0 = document.getElementById('result-image-0');
+        const img1 = document.getElementById('result-image-1');
+        if (entry.image1Base64) {
+          img0.src = 'data:image/jpeg;base64,' + entry.image1Base64;
+          img0.onload = () => img0.classList.add('loaded');
+        }
+        if (entry.image2Base64) {
+          img1.src = 'data:image/jpeg;base64,' + entry.image2Base64;
+          img1.onload = () => img1.classList.add('loaded');
+        }
+        startSlideshow();
+      });
+  } else {
+    // No backend ID, use thumbnail
+    const img0 = document.getElementById('result-image-0');
+    const img1 = document.getElementById('result-image-1');
+    if (entry.image1Base64) {
+      img0.src = 'data:image/jpeg;base64,' + entry.image1Base64;
+      img0.onload = () => img0.classList.add('loaded');
+    }
+    if (entry.image2Base64) {
+      img1.src = 'data:image/jpeg;base64,' + entry.image2Base64;
+      img1.onload = () => img1.classList.add('loaded');
+    }
+    startSlideshow();
+  }
+}
+
+// ===== SHARE =====
+async function shareResult() {
+  if (!weatherData || !currentImages.img1) return;
+  const btn = document.getElementById('share-btn');
+  btn.textContent = 'SAVING...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        city:         weatherData.city,
+        country:      weatherData.country,
+        tempF:        weatherData.tempF,
+        feelsLikeF:   weatherData.feelsLikeF,
+        humidity:     weatherData.humidity,
+        windSpeed:    weatherData.windSpeed,
+        condition:    weatherData.condition,
+        timeOfDay:    weatherData.timeOfDay,
+        season:       weatherData.season,
+        exactTime12:  weatherData.exactTime12,
+        exactTime24:  weatherData.exactTime24,
+        description:  weatherData.description,
+        image1Base64: currentImages.img1,
+        image2Base64: currentImages.img2 || ''
+      })
+    });
+
+    const data = await resp.json();
+    const url = window.location.origin + '/share/' + data.id;
+    await navigator.clipboard.writeText(url);
+
+    btn.textContent = 'SHARE THIS WEATHER →';
+    btn.disabled = false;
+    const confirm = document.getElementById('share-confirm');
+    confirm.style.display = 'block';
+    setTimeout(() => confirm.style.display = 'none', 3000);
+  } catch (err) {
+    btn.textContent = 'SHARE THIS WEATHER →';
+    btn.disabled = false;
+    alert('Share failed: ' + err.message);
+  }
+}
+
+// ===== LOAD FROM SHARED URL =====
+async function checkForSharedResult() {
+  const path = window.location.pathname;
+  if (!path.startsWith('/share/')) return;
+  const id = path.replace('/share/', '');
+  if (!id) return;
+
+  try {
+    const resp = await fetch('/api/share/' + id);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    weatherData = data;
+
+    document.getElementById('overlay-city').textContent = data.city + ', ' + data.country;
+    document.getElementById('overlay-condition').textContent =
+      data.condition + ' . ' + capitalize(data.timeOfDay) + ' . ' + capitalize(data.season);
+    document.getElementById('description-text').textContent = data.description;
+    updateStats();
+
+    const img0 = document.getElementById('result-image-0');
+    const img1 = document.getElementById('result-image-1');
+
+    if (data.image1Base64) {
+      img0.src = 'data:image/png;base64,' + data.image1Base64;
+      img0.onload = () => setTimeout(() => img0.classList.add('loaded'), 50);
+      currentImages.img1 = data.image1Base64;
+    }
+    if (data.image2Base64) {
+      img1.src = 'data:image/png;base64,' + data.image2Base64;
+      img1.onload = () => setTimeout(() => img1.classList.add('loaded'), 50);
+      currentImages.img2 = data.image2Base64;
+    }
+
+    goToSlide(0);
+    if (data.image1Base64 && data.image2Base64) startSlideshow();
+    document.getElementById('results').classList.add('visible');
+  } catch (err) {
+    console.log('No shared result found:', err);
+  }
+}
+
+// ===== STARS =====
+const canvas = document.getElementById('stars');
 const ctx = canvas.getContext('2d');
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -1277,7 +1627,10 @@ function drawStars() {
 }
 drawStars();
 
-</script>
+// ===== ON PAGE LOAD =====
+window.addEventListener('load', () => {
+  renderHistory();
+  checkForSharedResult();
+});
 
-</body>
-</html>
+</script>
