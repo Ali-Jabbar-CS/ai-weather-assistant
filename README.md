@@ -15,13 +15,7 @@ https://github.com/user-attachments/assets/12cb32dc-d1c1-42c0-b1be-20e2ec413059
 
 SkyVision is a full-stack weather application that combines live weather data, locally-hosted AI language models, and AI image generation to create a unique atmospheric experience for any city in the world.
 
----
 
-## Demo
-
-Search any city → get live weather data → receive an AI-written description → watch a photorealistic AI-generated cityscape load in real time.
-
----
 
 ## Features
 
