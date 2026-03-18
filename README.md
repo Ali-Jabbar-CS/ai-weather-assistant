@@ -8,8 +8,8 @@ https://github.com/user-attachments/assets/12cb32dc-d1c1-42c0-b1be-20e2ec413059
 
 ## Screenshots
 
-![Results](./screenshots/results.png)
-![Share](./screenshots/share.png)
+![Results](./screenshots/Results.png)
+![Share](./screenshots/Share.png)
 
 > AI-powered weather intelligence — real weather, real descriptions, real imagery.
 
