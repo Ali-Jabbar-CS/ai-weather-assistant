@@ -1,5 +1,7 @@
 # SkyVision 🌤️
 
+![SkyVision Demo]()
+
 > AI-powered weather intelligence — real weather, real descriptions, real imagery.
 
 SkyVision is a full-stack weather application that combines live weather data, locally-hosted AI language models, and AI image generation to create a unique atmospheric experience for any city in the world.
