@@ -1230,6 +1230,24 @@ function blobToThumbnail(blob, maxWidth = 300) {
   });
 }
 
+// builds a thumbnail straight from a base64 PNG string
+function base64ToThumbnail(base64, maxWidth = 300) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = maxWidth / img.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = maxWidth;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = 'data:image/png;base64,' + base64;
+  });
+}
+
 // ===== MAIN FETCH =====
 async function fetchWeather() {
   const city = input.value.trim();
@@ -1246,47 +1264,52 @@ async function fetchWeather() {
     const full = await fullResp.json();
     weatherData = full;
 
-    document.getElementById('overlay-city').textContent = 
-  full.city.includes(',') ? full.city : full.city + ', ' + full.country;
+    document.getElementById('overlay-city').textContent =
+      full.city.includes(',') ? full.city : full.city + ', ' + full.country;
     document.getElementById('overlay-condition').textContent =
       full.condition + ' . ' + capitalize(full.timeOfDay) + ' . ' + capitalize(full.season);
     document.getElementById('description-text').textContent = full.description;
     updateStats();
 
- // Reset slideshow and images
-stopSlideshow();
-currentSlide = 0;
-imagesLoaded = 0;
-currentImages = { img1: null, img2: null };
-document.querySelectorAll('.slide').forEach(s => {
-  s.src = '';
-  s.classList.remove('active');
-  s.classList.remove('loaded');
-});
-document.querySelectorAll('.slide-dot').forEach(d => d.classList.remove('active'));
-document.querySelector('.slide').classList.add('active');
-document.querySelector('.slide-dot').classList.add('active');
+    // Reset slideshow and images
+    stopSlideshow();
+    currentSlide = 0;
+    currentImages = { img1: null, img2: null };
+    document.querySelectorAll('.slide').forEach(s => {
+      s.src = '';
+      s.classList.remove('active');
+      s.classList.remove('loaded');
+    });
+    document.querySelectorAll('.slide-dot').forEach(d => d.classList.remove('active'));
+    document.querySelector('.slide').classList.add('active');
+    document.querySelector('.slide-dot').classList.add('active');
 
-const thisSearch = ++searchId;
+    const thisSearch = ++searchId;
 
-for (let i = 0; i < 2; i++) {
-  fetch('/weather/image?city=' + encodeURIComponent(city))
-    .then(r => { if (!r.ok) throw new Error('Image failed'); return r.blob(); })
-    .then(async blob => {
-      if (thisSearch !== searchId) return;
-      const img = document.getElementById('result-image-' + i);
-      img.classList.remove('loaded');
-      img.src = URL.createObjectURL(blob);
-      img.onload = () => setTimeout(() => img.classList.add('loaded'), 50);
+    // one request now returns BOTH images (generated in a single prediction)
+    fetch('/weather/images?city=' + encodeURIComponent(city))
+      .then(r => {
+        if (r.status === 429) throw new Error('Daily image limit reached. Try again tomorrow.');
+        if (!r.ok) throw new Error('Image generation failed.');
+        return r.json();
+      })
+      .then(async data => {
+        if (thisSearch !== searchId) return;
 
-      const base64 = await blobToBase64(blob);
-      const thumbnail = await blobToThumbnail(blob);
+        const sources = [data.image1, data.image2];
+        for (let i = 0; i < 2; i++) {
+          if (!sources[i]) continue;
+          const img = document.getElementById('result-image-' + i);
+          img.classList.remove('loaded');
+          img.src = 'data:image/png;base64,' + sources[i];
+          img.onload = () => setTimeout(() => img.classList.add('loaded'), 50);
+        }
 
-      if (i === 0) { currentImages.img1 = base64; currentImages.thumb1 = thumbnail; }
-      if (i === 1) { currentImages.img2 = base64; currentImages.thumb2 = thumbnail; }
+        currentImages.img1 = data.image1;
+        currentImages.img2 = data.image2;
+        currentImages.thumb1 = data.image1 ? await base64ToThumbnail(data.image1) : null;
+        currentImages.thumb2 = data.image2 ? await base64ToThumbnail(data.image2) : null;
 
-      imagesLoaded++;
-      if (imagesLoaded === 1) {
         stopLoadingPhrases();
         document.getElementById('loading').classList.remove('visible');
         document.querySelectorAll('.fade-up').forEach(el => {
@@ -1295,42 +1318,38 @@ for (let i = 0; i < 2; i++) {
           el.style.animation = '';
         });
         document.getElementById('results').classList.add('visible');
-      }
-      if (imagesLoaded === 2) {
-  startSlideshow();
+        startSlideshow();
 
-  // Save full quality images to backend, thumbnail to localStorage
-  fetch('/api/history', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      city:         weatherData.city,
-      country:      weatherData.country,
-      tempF:        weatherData.tempF,
-      feelsLikeF:   weatherData.feelsLikeF,
-      humidity:     weatherData.humidity,
-      windSpeed:    weatherData.windSpeed,
-      condition:    weatherData.condition,
-      timeOfDay:    weatherData.timeOfDay,
-      season:       weatherData.season,
-      exactTime12:  weatherData.exactTime12,
-      exactTime24:  weatherData.exactTime24,
-      description:  weatherData.description,
-      image1Base64: currentImages.img1,
-      image2Base64: currentImages.img2
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, data.id);
-  })
-  .catch(() => {
-    saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, null);
-  });
-}
-    })
-    .catch(err => console.log('Image ' + i + ' failed: ' + err.message));
-}
+        // Save full-quality images to backend, thumbnail to localStorage
+        fetch('/api/history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            city:         weatherData.city,
+            country:      weatherData.country,
+            tempF:        weatherData.tempF,
+            feelsLikeF:   weatherData.feelsLikeF,
+            humidity:     weatherData.humidity,
+            windSpeed:    weatherData.windSpeed,
+            condition:    weatherData.condition,
+            timeOfDay:    weatherData.timeOfDay,
+            season:       weatherData.season,
+            exactTime12:  weatherData.exactTime12,
+            exactTime24:  weatherData.exactTime24,
+            description:  weatherData.description,
+            image1Base64: currentImages.img1,
+            image2Base64: currentImages.img2
+          })
+        })
+        .then(r => r.json())
+        .then(d => saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, d.id))
+        .catch(() => saveToHistory(weatherData, currentImages.thumb1, currentImages.thumb2, null));
+      })
+      .catch(err => {
+        stopLoadingPhrases();
+        document.getElementById('loading').classList.remove('visible');
+        alert('Error: ' + err.message);
+      });
 
   } catch (err) {
     stopLoadingPhrases();
@@ -1433,8 +1452,8 @@ function toggleHistory() {
 function loadFromHistory(entry) {
   weatherData = entry;
   document.getElementById('city-input').value = entry.city;
-  document.getElementById('overlay-city').textContent = 
-  entry.city.includes(',') ? entry.city : entry.city + ', ' + entry.country;
+  document.getElementById('overlay-city').textContent =
+    entry.city.includes(',') ? entry.city : entry.city + ', ' + entry.country;
   document.getElementById('overlay-condition').textContent =
     entry.condition + ' . ' + capitalize(entry.timeOfDay) + ' . ' + capitalize(entry.season);
   document.getElementById('description-text').textContent = entry.description;
@@ -1569,8 +1588,8 @@ async function checkForSharedResult() {
     const data = await resp.json();
     weatherData = data;
 
-   document.getElementById('overlay-city').textContent = 
-  entry.city.includes(',') ? entry.city : entry.city + ', ' + entry.country;
+    document.getElementById('overlay-city').textContent =
+      data.city.includes(',') ? data.city : data.city + ', ' + data.country;
     document.getElementById('overlay-condition').textContent =
       data.condition + ' . ' + capitalize(data.timeOfDay) + ' . ' + capitalize(data.season);
     document.getElementById('description-text').textContent = data.description;

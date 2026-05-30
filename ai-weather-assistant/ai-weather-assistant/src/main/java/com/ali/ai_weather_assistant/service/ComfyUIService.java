@@ -1,5 +1,7 @@
 package com.ali.ai_weather_assistant.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class ComfyUIService {
 
-    // pulled from application.properties (or REPLICATE_API_TOKEN env var on Railway)
     @Value("${replicate.api.key:}")
     private String replicateApiKey;
 
@@ -48,7 +49,7 @@ public class ComfyUIService {
 
     // -------------------------------------------------------
     // Build the request body: FLUX settings + our weather prompt
-    // FLUX has no negative prompt, so framing/exclusions go in the prompt
+    // num_outputs 2 = both slideshow images from a single prediction
     // -------------------------------------------------------
     private String buildRequestBody(String prompt) throws Exception {
         Map<String, Object> input = Map.ofEntries(
@@ -58,7 +59,7 @@ public class ComfyUIService {
                         + "high dynamic range, professional color grading. No people. No text."),
                 Map.entry("aspect_ratio", "1:1"),
                 Map.entry("megapixels", "1"),
-                Map.entry("num_outputs", 1),
+                Map.entry("num_outputs", 2),
                 Map.entry("num_inference_steps", 30),
                 Map.entry("guidance_scale", 3.0),
                 Map.entry("output_format", "png"),
@@ -73,10 +74,6 @@ public class ComfyUIService {
         return mapper.writeValueAsString(body);
     }
 
-    // --------------------------------------------------
-    //  Submit the prediction, get back a prediction id
-    //  Replicate expects: { "version": ..., "input": { ... } }
-    // --------------------------------------------------
     private String submitPrediction(String prompt) throws Exception {
         String body = buildRequestBody(prompt);
         HttpEntity<String> request = new HttpEntity<>(body, authHeaders());
@@ -94,15 +91,12 @@ public class ComfyUIService {
         return id;
     }
 
-    // ----------------------------------------
-    //  Replicate runs predictions asynchronously — poll until status is "succeeded"
-    // ----------------------------------------
-    private String pollForImageUrl(String predictionId) throws InterruptedException {
+    // poll until succeeded, then return all output image URLs
+    private List<String> pollForImageUrls(String predictionId) throws InterruptedException {
         String url = PREDICTIONS_URL + "/" + predictionId;
         HttpEntity<Void> request = new HttpEntity<>(authHeaders());
 
-        // up to 60 attempts x 2s = 120s (cold starts can take a bit)
-        for (int attempt = 0; attempt < 60; attempt++) {
+        for (int attempt = 0; attempt < 60; attempt++) {   // up to 120s
             Thread.sleep(2000);
 
             ResponseEntity<String> response =
@@ -119,8 +113,11 @@ public class ComfyUIService {
             String status = root.path("status").asText();
 
             if ("succeeded".equals(status)) {
-                // output is a list of image URLs — take the first
-                return root.path("output").path(0).asText();
+                List<String> urls = new ArrayList<>();
+                for (JsonNode node : root.path("output")) {
+                    urls.add(node.asText());
+                }
+                return urls;
             }
             if ("failed".equals(status) || "canceled".equals(status)) {
                 throw new RuntimeException("Replicate prediction " + status + ": " + root.path("error").asText());
@@ -132,18 +129,15 @@ public class ComfyUIService {
         throw new RuntimeException("Replicate timed out after 120 seconds");
     }
 
-    // ------------------------------
-    //  Fetch the actual image bytes from the Replicate output URL
-    // ------------------------------
     private byte[] fetchImageBytes(String imageUrl) {
         return restTemplate.getForObject(imageUrl, byte[].class);
     }
 
     // -----------------------------------------
-    // PUBLIC METHOD: the controller calls this
+    // PUBLIC METHOD: the controller calls this — returns both images
     // -----------------------------------------
-    public byte[] generateWeatherImage(String weatherPrompt) throws InterruptedException {
-        System.out.println("=== ComfyUIService: generating image (Replicate FLUX dev) ===");
+    public List<byte[]> generateWeatherImages(String weatherPrompt) throws InterruptedException {
+        System.out.println("=== ComfyUIService: generating images (Replicate FLUX dev x2) ===");
         System.out.println("Prompt: " + weatherPrompt);
 
         if (replicateApiKey == null || replicateApiKey.isBlank()) {
@@ -162,9 +156,13 @@ public class ComfyUIService {
         }
         System.out.println("Prediction ID: " + predictionId);
 
-        String imageUrl = pollForImageUrl(predictionId);
-        System.out.println("Image ready: " + imageUrl);
+        List<String> urls = pollForImageUrls(predictionId);
+        System.out.println("Images ready: " + urls.size());
 
-        return fetchImageBytes(imageUrl);
+        List<byte[]> images = new ArrayList<>();
+        for (String u : urls) {
+            images.add(fetchImageBytes(u));
+        }
+        return images;
     }
 }

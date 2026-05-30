@@ -9,42 +9,41 @@ import org.springframework.stereotype.Service;
 @Service
 public class RateLimitService {
 
-    // 10 searches/person/day, and each search makes 2 images
-    private static final int MAX_IMAGES_PER_VISITOR = 20;
-    private static final int MAX_IMAGES_GLOBAL = 100;
+    // each search makes both images in one prediction
+    private static final int MAX_SEARCHES_PER_VISITOR = 10;
+    private static final int MAX_SEARCHES_GLOBAL = 50;   // 50 searches x 2 images = 100 images/day
 
     private LocalDate currentDay = LocalDate.now();
-    private int globalImageCount = 0;
-    private final Map<String, Integer> visitorImageCounts = new ConcurrentHashMap<>();
+    private int globalSearchCount = 0;
+    private final Map<String, Integer> visitorSearchCounts = new ConcurrentHashMap<>();
 
-    // wipe the counters once we roll over into a new day
     private void rolloverIfNewDay() {
         LocalDate today = LocalDate.now();
         if (!today.equals(currentDay)) {
             currentDay = today;
-            globalImageCount = 0;
-            visitorImageCounts.clear();
+            globalSearchCount = 0;
+            visitorSearchCounts.clear();
         }
     }
 
-    // true if this visitor is allowed one more image today (and counts it)
-    public synchronized boolean allowImage(String visitorId) {
+    // true if this visitor is allowed one more search today (and counts it)
+    public synchronized boolean allowSearch(String visitorId) {
         rolloverIfNewDay();
 
-        if (globalImageCount >= MAX_IMAGES_GLOBAL) {
+        if (globalSearchCount >= MAX_SEARCHES_GLOBAL) {
             return false;
         }
-        int used = visitorImageCounts.getOrDefault(visitorId, 0);
-        if (used >= MAX_IMAGES_PER_VISITOR) {
+        int used = visitorSearchCounts.getOrDefault(visitorId, 0);
+        if (used >= MAX_SEARCHES_PER_VISITOR) {
             return false;
         }
 
-        globalImageCount++;
-        visitorImageCounts.put(visitorId, used + 1);
+        globalSearchCount++;
+        visitorSearchCounts.put(visitorId, used + 1);
         return true;
     }
 
-    public synchronized int getGlobalImageCount() {
-        return globalImageCount;
+    public synchronized int getGlobalSearchCount() {
+        return globalSearchCount;
     }
 }

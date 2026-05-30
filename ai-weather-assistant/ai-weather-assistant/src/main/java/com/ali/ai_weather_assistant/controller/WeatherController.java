@@ -1,6 +1,10 @@
 package com.ali.ai_weather_assistant.controller;
 
-import org.springframework.http.MediaType;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,17 +65,17 @@ public class WeatherController {
         return aiService.askAI(prompt);
     }
 
-    @GetMapping(value = "/weather/image", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city,
-                                                  HttpServletRequest request)
+    // returns BOTH slideshow images (one prediction) as base64 JSON
+    @GetMapping("/weather/images")
+    public ResponseEntity<Map<String, String>> getWeatherImages(@RequestParam String city,
+                                                                HttpServletRequest request)
             throws InterruptedException {
 
-        // check limits before spending a Replicate call
         String visitorId = clientIp(request);
-        if (!rateLimitService.allowImage(visitorId)) {
+        if (!rateLimitService.allowSearch(visitorId)) {
             System.out.println("Rate limit hit for " + visitorId
-                    + " (global images today: " + rateLimitService.getGlobalImageCount() + ")");
-            return ResponseEntity.status(429).build();
+                    + " (searches today, global: " + rateLimitService.getGlobalSearchCount() + ")");
+            return ResponseEntity.status(429).body(Map.of("error", "Daily limit reached. Try again tomorrow."));
         }
 
         WeatherData data = weatherService.getWeather(city);
@@ -88,12 +92,17 @@ public class WeatherController {
         );
 
         System.out.println("Visual prompt: " + visualPrompt);
-        byte[] imageBytes = comfyUIService.generateWeatherImage(visualPrompt);
-        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(imageBytes);
+        List<byte[]> images = comfyUIService.generateWeatherImages(visualPrompt);
+
+        Base64.Encoder enc = Base64.getEncoder();
+        Map<String, String> result = new HashMap<>();
+        result.put("image1", images.size() > 0 ? enc.encodeToString(images.get(0)) : "");
+        result.put("image2", images.size() > 1 ? enc.encodeToString(images.get(1)) : "");
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/weather/full")
-    public java.util.Map<String, Object> getFullWeatherReport(@RequestParam String city)
+    public Map<String, Object> getFullWeatherReport(@RequestParam String city)
             throws InterruptedException {
         WeatherData data = weatherService.getWeather(city);
 
@@ -111,19 +120,19 @@ public class WeatherController {
 
         String description = aiService.askAI(prompt);
 
-        return java.util.Map.ofEntries(
-            java.util.Map.entry("city",        data.getCity()),
-            java.util.Map.entry("country",     data.getCountry()),
-            java.util.Map.entry("tempF",       data.getTempF()),
-            java.util.Map.entry("feelsLikeF",  data.getFeelsLikeF()),
-            java.util.Map.entry("humidity",    data.getHumidity()),
-            java.util.Map.entry("windSpeed",   data.getWindSpeed()),
-            java.util.Map.entry("condition",   data.getCondition()),
-            java.util.Map.entry("timeOfDay",   data.getTimeOfDay()),
-            java.util.Map.entry("season",      data.getSeason()),
-            java.util.Map.entry("exactTime12", data.getExactTime12()),
-            java.util.Map.entry("exactTime24", data.getExactTime24()),
-            java.util.Map.entry("description", description)
+        return Map.ofEntries(
+            Map.entry("city",        data.getCity()),
+            Map.entry("country",     data.getCountry()),
+            Map.entry("tempF",       data.getTempF()),
+            Map.entry("feelsLikeF",  data.getFeelsLikeF()),
+            Map.entry("humidity",    data.getHumidity()),
+            Map.entry("windSpeed",   data.getWindSpeed()),
+            Map.entry("condition",   data.getCondition()),
+            Map.entry("timeOfDay",   data.getTimeOfDay()),
+            Map.entry("season",      data.getSeason()),
+            Map.entry("exactTime12", data.getExactTime12()),
+            Map.entry("exactTime24", data.getExactTime24()),
+            Map.entry("description", description)
         );
     }
 
