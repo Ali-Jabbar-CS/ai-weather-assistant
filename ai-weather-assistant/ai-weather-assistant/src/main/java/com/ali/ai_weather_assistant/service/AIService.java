@@ -1,9 +1,9 @@
 package com.ali.ai_weather_assistant.service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -11,16 +11,30 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class AIService {
 
-    // Try both to avoid localhost/127.0.0.1 networking issues
-    private final List<String> OLLAMA_URLS = List.of(
-            "http://127.0.0.1:11434/api/generate",
-            "http://localhost:11434/api/generate"
-    );
+    // Groq is OpenAI-compatible. This is the chat-completions endpoint.
+    private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+    // Current supported model (the old llama3-8192 names are deprecated).
+    // If Groq ever retires this one, just change it here.
+    private static final String MODEL = "llama-3.3-70b-versatile";
+
+    // Reads groq.api.key from application.properties locally, OR the
+    // GROQ_API_KEY environment variable on Railway (Spring maps both to this).
+    // The ":" gives an empty default so the app still boots if the key is missing.
+    @Value("${groq.api.key:}")
+    private String groqApiKey;
+
+    // Jackson is already on your classpath via spring-boot-starter-web.
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private RestTemplate createRestTemplate() {
         SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
@@ -30,87 +44,80 @@ public class AIService {
     }
 
     public String askAI(String prompt) {
+        if (groqApiKey == null || groqApiKey.isBlank()) {
+            return "AI ERROR: groq.api.key is not set. Add it to application.properties "
+                    + "(or set the GROQ_API_KEY environment variable).";
+        }
+        if (prompt == null) prompt = "";
+
         RestTemplate restTemplate = createRestTemplate();
 
-        String jsonBody = """
-                {
-                  "model": "llama3",
-                  "prompt": "%s",
-                  "stream": false
-                }
-                """.formatted(escapeForJson(prompt));
+        // Build the request body with Jackson so any quotes/newlines in the
+        // prompt are escaped correctly (no more manual escaping).
+        String jsonBody;
+        try {
+            Map<String, Object> body = Map.of(
+                    "model", MODEL,
+                    "messages", List.of(
+                            Map.of("role", "user", "content", prompt)
+                    ),
+                    "temperature", 0.7,   // optional: 0 = focused, 1 = creative. Tune or remove.
+                    "max_tokens", 500      // optional: caps description length. Tune or remove.
+            );
+            jsonBody = mapper.writeValueAsString(body);
+        } catch (Exception e) {
+            return "AI ERROR: failed to build request JSON - " + e.getMessage();
+        }
 
         // Debug prints (these go to the Spring Boot console)
-        System.out.println("=== AIService.askAI starting ===");
+        System.out.println("=== AIService.askAI starting (Groq) ===");
         System.out.println("Prompt length: " + prompt.length());
-        System.out.println("JSON body length: " + jsonBody.length());
+        System.out.println("Model: " + MODEL);
 
-        for (String url : OLLAMA_URLS) {
-            try {
-                System.out.println("Attempting Ollama URL: " + url);
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+            headers.setBearerAuth(groqApiKey); // sends "Authorization: Bearer <key>"
 
-                HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-                ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    GROQ_URL, HttpMethod.POST, request, String.class);
 
-                System.out.println("Ollama response status: " + resp.getStatusCode());
-                String body = resp.getBody();
-                if (body != null) {
-                    System.out.println("Ollama response length: " + body.length());
-                    System.out.println("Ollama response (first 1000 chars):");
-                    System.out.println(body.length() > 1000 ? body.substring(0, 1000) : body);
-                } else {
-                    System.out.println("Ollama response body is NULL");
-                }
-
-               if (body == null) return "AI ERROR: empty response from Ollama";
-
-int start = body.indexOf("\"response\":\"");
-if (start != -1) {
-    start += 12;
-    // Walk forward until we find an unescaped closing quote
-    StringBuilder result = new StringBuilder();
-    int i = start;
-    while (i < body.length()) {
-        char c = body.charAt(i);
-        if (c == '\\' && i + 1 < body.length()) {
-            char next = body.charAt(i + 1);
-            if (next == '"') { result.append('"'); i += 2; continue; }
-            if (next == 'n') { result.append('\n'); i += 2; continue; }
-            if (next == '\\') { result.append('\\'); i += 2; continue; }
-        }
-        if (c == '"') break; // unescaped quote = end of response
-        result.append(c);
-        i++;
-    }
-  String response = result.toString().trim();
-// Strip common Llama3 preamble phrases
-response = response.replaceAll("(?i)here's a friendly description of the weather:\\s*", "");
-response = response.replaceAll("(?i)here's a description of the weather:\\s*", "");
-response = response.replaceAll("(?i)here's the weather description:\\s*", "");
-return response.trim();
-}
-return body;
-
-                
-            } catch (Exception e) {
-                System.out.println("Exception calling Ollama at " + url + ": " + e.getClass().getName() + " - " + e.getMessage());
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                System.out.println(sw.toString());
-                // try next URL
+            System.out.println("Groq response status: " + resp.getStatusCode());
+            String respBody = resp.getBody();
+            if (respBody == null) {
+                return "AI ERROR: empty response from Groq";
             }
+
+            // Pull out choices[0].message.content
+            JsonNode root = mapper.readTree(respBody);
+            JsonNode contentNode = root.path("choices").path(0).path("message").path("content");
+
+            if (contentNode.isMissingNode() || contentNode.asText().isEmpty()) {
+                System.out.println("Groq response had no content. Raw body (first 1000 chars):");
+                System.out.println(respBody.length() > 1000 ? respBody.substring(0, 1000) : respBody);
+                return "AI ERROR: no content in Groq response (see server console).";
+            }
+
+            String response = contentNode.asText().trim();
+
+            // Strip common preamble phrases (same as the Ollama version)
+            response = response.replaceAll("(?i)here's a friendly description of the weather:\\s*", "");
+            response = response.replaceAll("(?i)here's a description of the weather:\\s*", "");
+            response = response.replaceAll("(?i)here's the weather description:\\s*", "");
+            return response.trim();
+
+        } catch (HttpStatusCodeException e) {
+            // Groq returned 4xx/5xx — the body usually says why
+            // (401 = bad/missing key, 429 = rate limited, 400 = bad model name).
+            System.out.println("Groq HTTP error " + e.getStatusCode() + ": " + e.getResponseBodyAsString());
+            return "AI ERROR: Groq returned " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
+        } catch (Exception e) {
+            System.out.println("Exception calling Groq: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
+            return "AI ERROR: Groq call failed - " + e.getMessage();
         }
-
-        return "AI ERROR: all Ollama attempts failed (see server console for stack traces).";
-    }
-
-    // minimal JSON-escape for prompt string
-    private String escapeForJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
