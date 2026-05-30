@@ -1,196 +1,189 @@
 package com.ali.ai_weather_assistant.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.ali.ai_weather_assistant.model.WeatherData;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class WeatherService {
 
-    @Value("${weather.api.key}")
-    private String apiKey;
+    // Open-Meteo is free and needs no API key. It works off lat/lon, so we
+    // geocode the city name first, then pull current weather for those coords.
+    private static final String GEOCODE_URL  = "https://geocoding-api.open-meteo.com/v1/search";
+    private static final String FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final RestTemplate restTemplate = createRestTemplate();
+
+    private static RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
+        rf.setConnectTimeout(10_000);
+        rf.setReadTimeout(10_000);
+        return new RestTemplate(rf);
+    }
 
     public String getWeatherRaw(String city) {
-        String query = parseCity(city);
-        String url = "https://api.openweathermap.org/data/2.5/weather?q="
-                + query + "&appid=" + apiKey + "&units=imperial";
-        return new RestTemplate().getForObject(url, String.class);
+        Place place = geocode(city);
+        return fetchForecastJson(place.latitude, place.longitude);
     }
 
     public WeatherData getWeather(String city) {
-        String json = getWeatherRaw(city);
+        Place place = geocode(city);
+        String json = fetchForecastJson(place.latitude, place.longitude);
 
-        return new WeatherData(
-            city,
-            extractString(json, "\"country\":\""),
-            extractDouble(json, "\"temp\":"),
-            extractDouble(json, "\"feels_like\":"),
-            extractString(json, "\"main\":\""),
-            extractString(json, "\"description\":\""),
-            (int) extractDouble(json, "\"humidity\":"),
-            extractDouble(json, "\"speed\":"),
-            (long) extractDouble(json, "\"sunrise\":"),
-            (long) extractDouble(json, "\"sunset\":"),
-            (long) extractDouble(json, "\"dt\":"),
-            (int) extractDouble(json, "\"timezone\":"),
-            json
-        );
-    }
+        try {
+            JsonNode root    = mapper.readTree(json);
+            JsonNode current = root.path("current");
 
-    private String parseCity(String input) {
-        if (!input.contains(",")) return input.trim();
-        String[] parts = input.split(",", 2);
-        String cityPart = parts[0].trim();
-        String countryPart = parts[1].trim();
-        if (countryPart.length() == 2) {
-            return cityPart + "," + countryPart.toUpperCase();
+            double tempF      = current.path("temperature_2m").asDouble();
+            double feelsLikeF = current.path("apparent_temperature").asDouble();
+            int humidity      = current.path("relative_humidity_2m").asInt();
+            double windSpeed  = current.path("wind_speed_10m").asDouble();
+            int code          = current.path("weather_code").asInt();
+            long currentTime  = current.path("time").asLong();
+            int utcOffset     = root.path("utc_offset_seconds").asInt();
+
+            long sunrise = root.path("daily").path("sunrise").path(0).asLong();
+            long sunset  = root.path("daily").path("sunset").path(0).asLong();
+
+            return new WeatherData(
+                place.name,
+                place.countryCode,
+                tempF,
+                feelsLikeF,
+                conditionFromCode(code),
+                descriptionFromCode(code),
+                humidity,
+                windSpeed,
+                sunrise,
+                sunset,
+                currentTime,
+                utcOffset,
+                json
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse Open-Meteo forecast: " + e.getMessage(), e);
         }
-        String code = COUNTRY_CODES.getOrDefault(countryPart.toLowerCase(), countryPart);
-        return cityPart + "," + code.toUpperCase();
     }
 
-    private static final java.util.Map<String, String> COUNTRY_CODES =
-        java.util.Map.ofEntries(
-            java.util.Map.entry("afghanistan", "AF"),
-            java.util.Map.entry("albania", "AL"),
-            java.util.Map.entry("algeria", "DZ"),
-            java.util.Map.entry("argentina", "AR"),
-            java.util.Map.entry("armenia", "AM"),
-            java.util.Map.entry("australia", "AU"),
-            java.util.Map.entry("austria", "AT"),
-            java.util.Map.entry("azerbaijan", "AZ"),
-            java.util.Map.entry("bahrain", "BH"),
-            java.util.Map.entry("bangladesh", "BD"),
-            java.util.Map.entry("belarus", "BY"),
-            java.util.Map.entry("belgium", "BE"),
-            java.util.Map.entry("bolivia", "BO"),
-            java.util.Map.entry("bosnia", "BA"),
-            java.util.Map.entry("brazil", "BR"),
-            java.util.Map.entry("bulgaria", "BG"),
-            java.util.Map.entry("cambodia", "KH"),
-            java.util.Map.entry("cameroon", "CM"),
-            java.util.Map.entry("canada", "CA"),
-            java.util.Map.entry("chile", "CL"),
-            java.util.Map.entry("china", "CN"),
-            java.util.Map.entry("colombia", "CO"),
-            java.util.Map.entry("croatia", "HR"),
-            java.util.Map.entry("cuba", "CU"),
-            java.util.Map.entry("czech republic", "CZ"),
-            java.util.Map.entry("czechia", "CZ"),
-            java.util.Map.entry("denmark", "DK"),
-            java.util.Map.entry("ecuador", "EC"),
-            java.util.Map.entry("egypt", "EG"),
-            java.util.Map.entry("ethiopia", "ET"),
-            java.util.Map.entry("finland", "FI"),
-            java.util.Map.entry("france", "FR"),
-            java.util.Map.entry("georgia", "GE"),
-            java.util.Map.entry("germany", "DE"),
-            java.util.Map.entry("ghana", "GH"),
-            java.util.Map.entry("greece", "GR"),
-            java.util.Map.entry("hungary", "HU"),
-            java.util.Map.entry("india", "IN"),
-            java.util.Map.entry("indonesia", "ID"),
-            java.util.Map.entry("iran", "IR"),
-            java.util.Map.entry("iraq", "IQ"),
-            java.util.Map.entry("ireland", "IE"),
-            java.util.Map.entry("israel", "IL"),
-            java.util.Map.entry("italy", "IT"),
-            java.util.Map.entry("jamaica", "JM"),
-            java.util.Map.entry("japan", "JP"),
-            java.util.Map.entry("jordan", "JO"),
-            java.util.Map.entry("kazakhstan", "KZ"),
-            java.util.Map.entry("kenya", "KE"),
-            java.util.Map.entry("kuwait", "KW"),
-            java.util.Map.entry("kyrgyzstan", "KG"),
-            java.util.Map.entry("laos", "LA"),
-            java.util.Map.entry("latvia", "LV"),
-            java.util.Map.entry("lebanon", "LB"),
-            java.util.Map.entry("libya", "LY"),
-            java.util.Map.entry("lithuania", "LT"),
-            java.util.Map.entry("luxembourg", "LU"),
-            java.util.Map.entry("malaysia", "MY"),
-            java.util.Map.entry("mexico", "MX"),
-            java.util.Map.entry("moldova", "MD"),
-            java.util.Map.entry("mongolia", "MN"),
-            java.util.Map.entry("morocco", "MA"),
-            java.util.Map.entry("mozambique", "MZ"),
-            java.util.Map.entry("myanmar", "MM"),
-            java.util.Map.entry("nepal", "NP"),
-            java.util.Map.entry("netherlands", "NL"),
-            java.util.Map.entry("new zealand", "NZ"),
-            java.util.Map.entry("nigeria", "NG"),
-            java.util.Map.entry("north korea", "KP"),
-            java.util.Map.entry("norway", "NO"),
-            java.util.Map.entry("oman", "OM"),
-            java.util.Map.entry("pakistan", "PK"),
-            java.util.Map.entry("panama", "PA"),
-            java.util.Map.entry("paraguay", "PY"),
-            java.util.Map.entry("peru", "PE"),
-            java.util.Map.entry("philippines", "PH"),
-            java.util.Map.entry("poland", "PL"),
-            java.util.Map.entry("portugal", "PT"),
-            java.util.Map.entry("qatar", "QA"),
-            java.util.Map.entry("romania", "RO"),
-            java.util.Map.entry("russia", "RU"),
-            java.util.Map.entry("saudi arabia", "SA"),
-            java.util.Map.entry("senegal", "SN"),
-            java.util.Map.entry("serbia", "RS"),
-            java.util.Map.entry("singapore", "SG"),
-            java.util.Map.entry("slovakia", "SK"),
-            java.util.Map.entry("slovenia", "SI"),
-            java.util.Map.entry("somalia", "SO"),
-            java.util.Map.entry("south africa", "ZA"),
-            java.util.Map.entry("south korea", "KR"),
-            java.util.Map.entry("spain", "ES"),
-            java.util.Map.entry("sri lanka", "LK"),
-            java.util.Map.entry("sudan", "SD"),
-            java.util.Map.entry("sweden", "SE"),
-            java.util.Map.entry("switzerland", "CH"),
-            java.util.Map.entry("syria", "SY"),
-            java.util.Map.entry("taiwan", "TW"),
-            java.util.Map.entry("tajikistan", "TJ"),
-            java.util.Map.entry("tanzania", "TZ"),
-            java.util.Map.entry("thailand", "TH"),
-            java.util.Map.entry("tunisia", "TN"),
-            java.util.Map.entry("turkey", "TR"),
-            java.util.Map.entry("turkmenistan", "TM"),
-            java.util.Map.entry("uganda", "UG"),
-            java.util.Map.entry("ukraine", "UA"),
-            java.util.Map.entry("united arab emirates", "AE"),
-            java.util.Map.entry("uae", "AE"),
-            java.util.Map.entry("united kingdom", "GB"),
-            java.util.Map.entry("uk", "GB"),
-            java.util.Map.entry("united states", "US"),
-            java.util.Map.entry("usa", "US"),
-            java.util.Map.entry("uruguay", "UY"),
-            java.util.Map.entry("uzbekistan", "UZ"),
-            java.util.Map.entry("venezuela", "VE"),
-            java.util.Map.entry("vietnam", "VN"),
-            java.util.Map.entry("yemen", "YE"),
-            java.util.Map.entry("zambia", "ZM"),
-            java.util.Map.entry("zimbabwe", "ZW")
-        );
-
-    private String extractString(String json, String key) {
-        int start = json.indexOf(key);
-        if (start == -1) return "unknown";
-        start += key.length();
-        int end = json.indexOf("\"", start);
-        return end == -1 ? "unknown" : json.substring(start, end);
-    }
-
-    private double extractDouble(String json, String key) {
-        int start = json.indexOf(key);
-        if (start == -1) return 0;
-        start += key.length();
-        int end = start;
-        while (end < json.length() && (Character.isDigit(json.charAt(end))
-                || json.charAt(end) == '.' || json.charAt(end) == '-')) {
-            end++;
+    // ---- geocoding: city name -> coordinates ----
+    private Place geocode(String input) {
+        String cityName = input;
+        String wantedCountry = null;
+        if (input.contains(",")) {
+            String[] parts = input.split(",", 2);
+            cityName = parts[0].trim();
+            wantedCountry = parts[1].trim();   // can be a code ("FR") or a name ("France")
         }
-        try { return Double.parseDouble(json.substring(start, end)); }
-        catch (NumberFormatException e) { return 0; }
+
+        String url = GEOCODE_URL + "?name=" + encode(cityName) + "&count=10&language=en&format=json";
+        String json = restTemplate.getForObject(url, String.class);
+
+        try {
+            JsonNode results = mapper.readTree(json).path("results");
+            if (!results.isArray() || results.isEmpty()) {
+                throw new RuntimeException("City not found: " + input);
+            }
+
+            JsonNode chosen = results.get(0);
+            if (wantedCountry != null && !wantedCountry.isEmpty()) {
+                for (JsonNode r : results) {
+                    String cc    = r.path("country_code").asText("");
+                    String cName = r.path("country").asText("");
+                    if (wantedCountry.equalsIgnoreCase(cc) || wantedCountry.equalsIgnoreCase(cName)) {
+                        chosen = r;
+                        break;
+                    }
+                }
+            }
+
+            Place p = new Place();
+            p.name        = chosen.path("name").asText(cityName);
+            p.countryCode = chosen.path("country_code").asText("");
+            p.latitude    = chosen.path("latitude").asDouble();
+            p.longitude   = chosen.path("longitude").asDouble();
+            return p;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to geocode city: " + e.getMessage(), e);
+        }
+    }
+
+    private String fetchForecastJson(double lat, double lon) {
+        String url = FORECAST_URL
+            + "?latitude=" + lat
+            + "&longitude=" + lon
+            + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code"
+            + "&daily=sunrise,sunset"
+            + "&temperature_unit=fahrenheit"
+            + "&wind_speed_unit=mph"
+            + "&timezone=auto"
+            + "&timeformat=unixtime";
+        return restTemplate.getForObject(url, String.class);
+    }
+
+    private String encode(String s) {
+        return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    // ---- WMO weather code -> text (Open-Meteo sends a number, not words) ----
+    private String conditionFromCode(int code) {
+        if (code == 0) return "Clear";
+        if (code <= 3) return "Clouds";
+        if (code == 45 || code == 48) return "Fog";
+        if (code >= 51 && code <= 57) return "Drizzle";
+        if (code >= 61 && code <= 67) return "Rain";
+        if (code >= 71 && code <= 77) return "Snow";
+        if (code >= 80 && code <= 82) return "Rain";
+        if (code >= 85 && code <= 86) return "Snow";
+        if (code >= 95) return "Thunderstorm";
+        return "Clouds";
+    }
+
+    private String descriptionFromCode(int code) {
+        return switch (code) {
+            case 0  -> "clear sky";
+            case 1  -> "mainly clear";
+            case 2  -> "partly cloudy";
+            case 3  -> "overcast";
+            case 45 -> "fog";
+            case 48 -> "depositing rime fog";
+            case 51 -> "light drizzle";
+            case 53 -> "moderate drizzle";
+            case 55 -> "dense drizzle";
+            case 56 -> "light freezing drizzle";
+            case 57 -> "dense freezing drizzle";
+            case 61 -> "light rain";
+            case 63 -> "moderate rain";
+            case 65 -> "heavy rain";
+            case 66 -> "light freezing rain";
+            case 67 -> "heavy freezing rain";
+            case 71 -> "light snow";
+            case 73 -> "moderate snow";
+            case 75 -> "heavy snow";
+            case 77 -> "snow grains";
+            case 80 -> "light rain showers";
+            case 81 -> "moderate rain showers";
+            case 82 -> "violent rain showers";
+            case 85 -> "light snow showers";
+            case 86 -> "heavy snow showers";
+            case 95 -> "thunderstorm";
+            case 96 -> "thunderstorm with light hail";
+            case 99 -> "thunderstorm with heavy hail";
+            default -> "unknown conditions";
+        };
+    }
+
+    // a geocoded place
+    private static class Place {
+        String name;
+        String countryCode;
+        double latitude;
+        double longitude;
     }
 }
