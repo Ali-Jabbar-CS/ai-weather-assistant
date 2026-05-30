@@ -1,6 +1,5 @@
 package com.ali.ai_weather_assistant.model;
 
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,31 +39,24 @@ public class WeatherData {
         this.rawJson = rawJson;
     }
 
+    // current time in the city's timezone (real now, not the API's data timestamp)
+    private ZonedDateTime localNow() {
+        return ZonedDateTime.now(ZoneOffset.ofTotalSeconds(timezone));
+    }
+
     // Returns exact local time in 24hr format e.g. "07:42"
     public String getExactTime24() {
-        ZonedDateTime localTime = ZonedDateTime.ofInstant(
-            Instant.ofEpochSecond(currentTimeEpoch),
-            ZoneOffset.ofTotalSeconds(timezone)
-        );
-        return localTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+        return localNow().format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     // Returns exact local time in 12hr format e.g. "7:42 AM"
     public String getExactTime12() {
-        ZonedDateTime localTime = ZonedDateTime.ofInstant(
-            Instant.ofEpochSecond(currentTimeEpoch),
-            ZoneOffset.ofTotalSeconds(timezone)
-        );
-        return localTime.format(DateTimeFormatter.ofPattern("h:mm a"));
+        return localNow().format(DateTimeFormatter.ofPattern("h:mm a"));
     }
 
     // Returns "morning", "afternoon", "evening", or "night" based on LOCAL time
     public String getTimeOfDay() {
-        ZonedDateTime localTime = ZonedDateTime.ofInstant(
-            Instant.ofEpochSecond(currentTimeEpoch),
-            ZoneOffset.ofTotalSeconds(timezone)
-        );
-        int hour = localTime.getHour();
+        int hour = localNow().getHour();
         if (hour >= 5 && hour < 12)  return "morning";
         if (hour >= 12 && hour < 17) return "afternoon";
         if (hour >= 17 && hour < 21) return "evening";
@@ -73,11 +65,7 @@ public class WeatherData {
 
     // Returns season based on LOCAL month
     public String getSeason() {
-        ZonedDateTime localTime = ZonedDateTime.ofInstant(
-            Instant.ofEpochSecond(currentTimeEpoch),
-            ZoneOffset.ofTotalSeconds(timezone)
-        );
-        int month = localTime.getMonthValue();
+        int month = localNow().getMonthValue();
         if (month >= 3 && month <= 5)  return "spring";
         if (month >= 6 && month <= 8)  return "summer";
         if (month >= 9 && month <= 11) return "autumn";

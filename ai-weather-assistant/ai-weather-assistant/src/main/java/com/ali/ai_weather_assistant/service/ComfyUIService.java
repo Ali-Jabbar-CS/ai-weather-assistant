@@ -5,176 +5,166 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class ComfyUIService {
 
-    // We'll pull these from application.properties so they're easy to change
-    @Value("${comfyui.url}")
-    private String comfyUiUrl;
+    // pulled from application.properties (or REPLICATE_API_TOKEN env var on Railway)
+    @Value("${replicate.api.key:}")
+    private String replicateApiKey;
 
-    @Value("${comfyui.checkpoint}")
-    private String checkpoint;
+    private static final String PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // official model — runs by owner/name, no version hash needed
+    // flux-dev = higher quality than schnell (more steps, slower, costs a bit more)
+    private static final String MODEL = "black-forest-labs/flux-dev";
 
-    // -------------------------------------------------------
-    // Building the workflow JSON with our weather prompt
-    // -------------------------------------------------------
-    private String buildWorkflow(String prompt) {
-    return """
-        {
-          "3": {
-            "inputs": {
-              "seed": %d,
-              "steps": 40,
-              "cfg": 5.0,
-              "sampler_name": "dpmpp_2m",
-              "scheduler": "karras",
-              "denoise": 1.0,
-              "model": ["4", 0],
-              "positive": ["6", 0],
-              "negative": ["7", 0],
-              "latent_image": ["5", 0]
-            },
-            "class_type": "KSampler"
-          },
-          "4": {
-            "inputs": {
-              "ckpt_name": "%s"
-            },
-            "class_type": "CheckpointLoaderSimple"
-          },
-          "5": {
-            "inputs": {
-              "width": 1024,
-              "height": 1024,
-              "batch_size": 1
-            },
-            "class_type": "EmptyLatentImage"
-          },
-          "6": {
-            "inputs": {
-              "text": "photorealistic, RAW photo, 8k uhd, highly detailed, professional photography, sharp focus, cinematic lighting, %s",
-              "clip": ["4", 1]
-            },
-            "class_type": "CLIPTextEncode"
-          },
-          "7": {
-            "inputs": {
-              "text": "ugly, deformed, blurry, low quality, watermark, people, crowd, persons, humans, figures, pedestrians, duplicate buildings, mirrored, repeated structures, tiling, symmetrical artifacts, double exposure, plants growing from ground, moss, unrealistic ground textures, text, signs with text, cartoon, anime, painting, illustration, drawing, aerial view, birds eye view, top down, overhead, fisheye, distorted roads, warped perspective",
-              "clip": ["4", 1]
-            },
-            "class_type": "CLIPTextEncode"
-          },
-          "8": {
-            "inputs": {
-              "samples": ["3", 0],
-              "vae": ["4", 2]
-            },
-            "class_type": "VAEDecode"
-          },
-          "9": {
-            "inputs": {
-              "filename_prefix": "weather",
-              "images": ["8", 0]
-            },
-            "class_type": "SaveImage"
-          }
-        }
-        """.formatted(
-            (long)(Math.random() * 999999999),
-            checkpoint,
-            escapeForJson(prompt)
-        );
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final RestTemplate restTemplate = createRestTemplate();
+
+    private static RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory rf = new SimpleClientHttpRequestFactory();
+        rf.setConnectTimeout(10_000);  // 10s
+        rf.setReadTimeout(30_000);     // 30s
+        return new RestTemplate(rf);
     }
 
-    // --------------------------------------------------
-    //  Submitting the workflow, and getting back a prompt_id
-    // --------------------------------------------------
-    private String submitPrompt(String workflowJson) {
-        String url = comfyUiUrl + "/api/prompt";
-
-        // ComfyUI expects: { "prompt": { ...workflow nodes... } }
-        String body = "{\"prompt\": " + workflowJson + "}";
-
+    private HttpHeaders authHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
+        headers.setBearerAuth(replicateApiKey);
+        return headers;
+    }
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-        Map<String, Object> responseBody = response.getBody();
+    // -------------------------------------------------------
+    // Build the request body: FLUX settings + our weather prompt
+    // FLUX has no negative prompt, so framing/exclusions go in the prompt
+    // -------------------------------------------------------
+    private String buildRequestBody(String prompt) throws Exception {
+        Map<String, Object> input = Map.ofEntries(
+                Map.entry("prompt",
+                        "Cinematic photorealistic photograph, ground-level street view. " + prompt
+                        + " Dramatic atmospheric lighting, ultra-detailed, sharp focus, "
+                        + "high dynamic range, professional color grading. No people. No text."),
+                Map.entry("aspect_ratio", "1:1"),
+                Map.entry("megapixels", "1"),
+                Map.entry("num_outputs", 1),
+                Map.entry("num_inference_steps", 30),
+                Map.entry("guidance_scale", 3.0),
+                Map.entry("output_format", "png"),
+                Map.entry("seed", (int)(Math.random() * 999999999))
+        );
 
-        if (responseBody == null || !responseBody.containsKey("prompt_id")) {
-            throw new RuntimeException("ComfyUI did not return a prompt_id. Is it running on " + comfyUiUrl + "?");
+        Map<String, Object> body = Map.of(
+                "version", MODEL,
+                "input", input
+        );
+
+        return mapper.writeValueAsString(body);
+    }
+
+    // --------------------------------------------------
+    //  Submit the prediction, get back a prediction id
+    //  Replicate expects: { "version": ..., "input": { ... } }
+    // --------------------------------------------------
+    private String submitPrediction(String prompt) throws Exception {
+        String body = buildRequestBody(prompt);
+        HttpEntity<String> request = new HttpEntity<>(body, authHeaders());
+
+        ResponseEntity<String> response =
+                restTemplate.exchange(PREDICTIONS_URL, HttpMethod.POST, request, String.class);
+
+        JsonNode root = mapper.readTree(response.getBody());
+        String id = root.path("id").asText(null);
+
+        if (id == null || id.isEmpty()) {
+            throw new RuntimeException("Replicate did not return a prediction id. Body: " + response.getBody());
         }
 
-        return (String) responseBody.get("prompt_id");
+        return id;
     }
 
     // ----------------------------------------
-    //  Poll /history until the image is ready
+    //  Replicate runs predictions asynchronously — poll until status is "succeeded"
     // ----------------------------------------
-    private String pollForImageFilename(String promptId) throws InterruptedException {
-        String url = comfyUiUrl + "/api/history/" + promptId;
+    private String pollForImageUrl(String predictionId) throws InterruptedException {
+        String url = PREDICTIONS_URL + "/" + predictionId;
+        HttpEntity<Void> request = new HttpEntity<>(authHeaders());
 
-        // ComfyUI generates images asynchronously — we poll every 2 seconds
-        for (int attempt = 0; attempt < 30; attempt++) {
+        // up to 60 attempts x 2s = 120s (cold starts can take a bit)
+        for (int attempt = 0; attempt < 60; attempt++) {
             Thread.sleep(2000);
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            Map<String, Object> history = response.getBody();
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.GET, request, String.class);
 
-            if (history != null && history.containsKey(promptId)) {
-                // Dig into the nested response: history -> promptId -> outputs -> "9" -> images -> [0] -> filename
-                Map<String, Object> entry    = (Map<String, Object>) history.get(promptId);
-                Map<String, Object> outputs  = (Map<String, Object>) entry.get("outputs");
-                Map<String, Object> node9    = (Map<String, Object>) outputs.get("9");
-                var images                   = (java.util.List<Map<String, Object>>) node9.get("images");
-                return (String) images.get(0).get("filename");
+            JsonNode root;
+            try {
+                root = mapper.readTree(response.getBody());
+            } catch (Exception e) {
+                System.out.println("Could not parse poll response: " + e.getMessage());
+                continue;
             }
 
-            System.out.println("Waiting for ComfyUI... attempt " + (attempt + 1));
+            String status = root.path("status").asText();
+
+            if ("succeeded".equals(status)) {
+                // output is a list of image URLs — take the first
+                return root.path("output").path(0).asText();
+            }
+            if ("failed".equals(status) || "canceled".equals(status)) {
+                throw new RuntimeException("Replicate prediction " + status + ": " + root.path("error").asText());
+            }
+
+            System.out.println("Waiting for Replicate... attempt " + (attempt + 1) + " (status: " + status + ")");
         }
 
-        throw new RuntimeException("ComfyUI timed out after 60 seconds");
+        throw new RuntimeException("Replicate timed out after 120 seconds");
     }
 
     // ------------------------------
-    //  Fetch the actual image bytes
+    //  Fetch the actual image bytes from the Replicate output URL
     // ------------------------------
-    private byte[] fetchImageBytes(String filename) {
-        String url = comfyUiUrl + "/api/view?filename=" + filename;
-        return restTemplate.getForObject(url, byte[].class);
+    private byte[] fetchImageBytes(String imageUrl) {
+        return restTemplate.getForObject(imageUrl, byte[].class);
     }
 
     // -----------------------------------------
     // PUBLIC METHOD: the controller calls this
     // -----------------------------------------
     public byte[] generateWeatherImage(String weatherPrompt) throws InterruptedException {
-        System.out.println("=== ComfyUIService: generating image ===");
+        System.out.println("=== ComfyUIService: generating image (Replicate FLUX dev) ===");
         System.out.println("Prompt: " + weatherPrompt);
 
-        String workflow  = buildWorkflow(weatherPrompt);
-        String promptId  = submitPrompt(workflow);
-        System.out.println("Prompt ID: " + promptId);
+        if (replicateApiKey == null || replicateApiKey.isBlank()) {
+            throw new RuntimeException("replicate.api.key is not set. Add it to application.properties "
+                    + "(or set the REPLICATE_API_TOKEN environment variable).");
+        }
 
-        String filename  = pollForImageFilename(promptId);
-        System.out.println("Image ready: " + filename);
+        String predictionId;
+        try {
+            predictionId = submitPrediction(weatherPrompt);
+        } catch (HttpStatusCodeException e) {
+            throw new RuntimeException("Replicate returned " + e.getStatusCode()
+                    + " - " + e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to submit Replicate prediction: " + e.getMessage(), e);
+        }
+        System.out.println("Prediction ID: " + predictionId);
 
-        return fetchImageBytes(filename);
-    }
+        String imageUrl = pollForImageUrl(predictionId);
+        System.out.println("Image ready: " + imageUrl);
 
-    // Minimal JSON escaping (same pattern as AIService)
-    private String escapeForJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
+        return fetchImageBytes(imageUrl);
     }
 }
