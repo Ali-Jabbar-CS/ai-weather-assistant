@@ -1,6 +1,5 @@
 package com.ali.ai_weather_assistant.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,17 +48,17 @@ public class ComfyUIService {
 
     // -------------------------------------------------------
     // Build the request body: FLUX settings + our weather prompt
-    // num_outputs 2 = both slideshow images from a single prediction
+    // one image per prediction so each slideshow image uses its own prompt
     // -------------------------------------------------------
     private String buildRequestBody(String prompt) throws Exception {
         Map<String, Object> input = Map.ofEntries(
                 Map.entry("prompt",
-                        "Cinematic photorealistic photograph, ground-level street view. " + prompt
+                        "Cinematic photorealistic photograph. " + prompt
                         + " Dramatic atmospheric lighting, ultra-detailed, sharp focus, "
                         + "high dynamic range, professional color grading. No people. No text."),
                 Map.entry("aspect_ratio", "1:1"),
                 Map.entry("megapixels", "1"),
-                Map.entry("num_outputs", 2),
+                Map.entry("num_outputs", 1),
                 Map.entry("num_inference_steps", 30),
                 Map.entry("guidance_scale", 3.0),
                 Map.entry("output_format", "png"),
@@ -91,8 +90,8 @@ public class ComfyUIService {
         return id;
     }
 
-    // poll until succeeded, then return all output image URLs
-    private List<String> pollForImageUrls(String predictionId) throws InterruptedException {
+    // poll one prediction until succeeded, return its image URL
+    private String pollForImageUrl(String predictionId) throws InterruptedException {
         String url = PREDICTIONS_URL + "/" + predictionId;
         HttpEntity<Void> request = new HttpEntity<>(authHeaders());
 
@@ -113,11 +112,7 @@ public class ComfyUIService {
             String status = root.path("status").asText();
 
             if ("succeeded".equals(status)) {
-                List<String> urls = new ArrayList<>();
-                for (JsonNode node : root.path("output")) {
-                    urls.add(node.asText());
-                }
-                return urls;
+                return root.path("output").path(0).asText();
             }
             if ("failed".equals(status) || "canceled".equals(status)) {
                 throw new RuntimeException("Replicate prediction " + status + ": " + root.path("error").asText());
@@ -133,36 +128,35 @@ public class ComfyUIService {
         return restTemplate.getForObject(imageUrl, byte[].class);
     }
 
-    // -----------------------------------------
-    // PUBLIC METHOD: the controller calls this — returns both images
-    // -----------------------------------------
-    public List<byte[]> generateWeatherImages(String weatherPrompt) throws InterruptedException {
-        System.out.println("=== ComfyUIService: generating images (Replicate FLUX dev x2) ===");
-        System.out.println("Prompt: " + weatherPrompt);
-
-        if (replicateApiKey == null || replicateApiKey.isBlank()) {
-            throw new RuntimeException("replicate.api.key is not set. Add it to application.properties "
-                    + "(or set the REPLICATE_API_TOKEN environment variable).");
-        }
-
-        String predictionId;
+    // one prompt -> one finished image (submit, poll, download)
+    private byte[] generateOne(String prompt) throws InterruptedException {
+        String id;
         try {
-            predictionId = submitPrediction(weatherPrompt);
+            id = submitPrediction(prompt);
         } catch (HttpStatusCodeException e) {
             throw new RuntimeException("Replicate returned " + e.getStatusCode()
                     + " - " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to submit Replicate prediction: " + e.getMessage(), e);
         }
-        System.out.println("Prediction ID: " + predictionId);
+        System.out.println("Prediction ID: " + id);
+        return fetchImageBytes(pollForImageUrl(id));
+    }
 
-        List<String> urls = pollForImageUrls(predictionId);
-        System.out.println("Images ready: " + urls.size());
+    // -----------------------------------------
+    // PUBLIC METHOD: the controller calls this — two prompts, two images
+    // generated one after the other so we stay under Replicate's burst limit
+    // -----------------------------------------
+    public List<byte[]> generateWeatherImages(String prompt1, String prompt2) throws InterruptedException {
+        System.out.println("=== ComfyUIService: generating 2 images (Replicate FLUX dev) ===");
 
-        List<byte[]> images = new ArrayList<>();
-        for (String u : urls) {
-            images.add(fetchImageBytes(u));
+        if (replicateApiKey == null || replicateApiKey.isBlank()) {
+            throw new RuntimeException("replicate.api.key is not set. Add it to application.properties "
+                    + "(or set the REPLICATE_API_TOKEN environment variable).");
         }
-        return images;
+
+        byte[] img1 = generateOne(prompt1);
+        byte[] img2 = generateOne(prompt2);
+        return List.of(img1, img2);
     }
 }
