@@ -6,11 +6,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.ali.ai_weather_assistant.model.WeatherData;
 import com.ali.ai_weather_assistant.service.AIService;
 import com.ali.ai_weather_assistant.service.ComfyUIService;
+import com.ali.ai_weather_assistant.service.RateLimitService;
 import com.ali.ai_weather_assistant.service.WeatherService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class WeatherController {
@@ -18,12 +22,14 @@ public class WeatherController {
     private final WeatherService weatherService;
     private final AIService aiService;
     private final ComfyUIService comfyUIService;
+    private final RateLimitService rateLimitService;
 
     public WeatherController(WeatherService weatherService, AIService aiService,
-                             ComfyUIService comfyUIService) {
+                             ComfyUIService comfyUIService, RateLimitService rateLimitService) {
         this.weatherService = weatherService;
         this.aiService = aiService;
         this.comfyUIService = comfyUIService;
+        this.rateLimitService = rateLimitService;
     }
 
     @GetMapping("/test")
@@ -56,8 +62,18 @@ public class WeatherController {
     }
 
     @GetMapping(value = "/weather/image", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city)
+    public ResponseEntity<byte[]> getWeatherImage(@RequestParam String city,
+                                                  HttpServletRequest request)
             throws InterruptedException {
+
+        // check limits before spending a Replicate call
+        String visitorId = clientIp(request);
+        if (!rateLimitService.allowImage(visitorId)) {
+            System.out.println("Rate limit hit for " + visitorId
+                    + " (global images today: " + rateLimitService.getGlobalImageCount() + ")");
+            return ResponseEntity.status(429).build();
+        }
+
         WeatherData data = weatherService.getWeather(city);
 
         String visualPrompt = aiService.askAI(
@@ -110,8 +126,18 @@ public class WeatherController {
             java.util.Map.entry("description", description)
         );
     }
-    @GetMapping({"/share/{id}"})
-public org.springframework.web.servlet.ModelAndView sharePage(@PathVariable String id) {
-    return new org.springframework.web.servlet.ModelAndView("forward:/index.html");
-}
+
+    @GetMapping("/share/{id}")
+    public ModelAndView sharePage(@PathVariable String id) {
+        return new ModelAndView("forward:/index.html");
+    }
+
+    // real client IP — on Railway we sit behind a proxy, so check X-Forwarded-For first
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
 }
