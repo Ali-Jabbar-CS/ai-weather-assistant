@@ -39,3 +39,4 @@ skyvision-db.mv.db
 *.trace.db
 ai-weather-assistant.zip
 .vscode/
+secrets.properties
