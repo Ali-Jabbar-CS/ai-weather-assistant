@@ -52,7 +52,7 @@ public class WeatherService {
 
             return new WeatherData(
                 place.name,
-                place.countryCode,
+                place.country,
                 tempF,
                 feelsLikeF,
                 conditionFromCode(code),
@@ -102,10 +102,10 @@ public class WeatherService {
             }
 
             Place p = new Place();
-            p.name        = chosen.path("name").asText(cityName);
-            p.countryCode = chosen.path("country_code").asText("");
-            p.latitude    = chosen.path("latitude").asDouble();
-            p.longitude   = chosen.path("longitude").asDouble();
+            p.name      = chosen.path("name").asText(cityName);
+            p.country   = chosen.path("country").asText("");   // full name (e.g. Germany), not the DE/GB code
+            p.latitude  = chosen.path("latitude").asDouble();
+            p.longitude = chosen.path("longitude").asDouble();
             return p;
         } catch (RuntimeException e) {
             throw e;
@@ -182,7 +182,7 @@ public class WeatherService {
     // a geocoded place
     private static class Place {
         String name;
-        String countryCode;
+        String country;
         double latitude;
         double longitude;
     }
