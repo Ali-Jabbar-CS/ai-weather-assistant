@@ -121,12 +121,16 @@ public class WeatherController {
         WeatherData data = weatherService.getWeather(city);
 
         String prompt = """
-                Describe the current weather in %s in 2 short, natural sentences,
-                like a friendly local giving a quick update.
-                Use these facts: %s, around %d degrees Fahrenheit (feels like %d),
-                %d%% humidity, wind about %d mph.
-                Weave the numbers in naturally instead of listing them off.
-                Keep it warm and conversational. No metaphors, no food references, no exclamations.
+                You're a friendly local giving a quick weather update for %s. Write exactly 2 short sentences.
+                Conditions: %s. Temperature %d degrees Fahrenheit, feels like %d, humidity %d%%, wind %d mph.
+
+                How to write it:
+                - Open with the conditions and how it actually feels outside.
+                - Give the temperature once. Only mention humidity or wind if it genuinely stands out (very humid, very windy, or dead still); otherwise skip it.
+                - Don't list every number, don't explain why the real and feels-like temperatures differ, and don't lean on filler words like "pretty" or "really".
+                - Keep it crisp and warm. No metaphors, no food references, no exclamations.
+
+                Tone to match: "It's grey and overcast in Oslo right now, sitting around 48 degrees. The air is damp and still, so it feels a touch colder than that."
                 """.formatted(
                     data.getCity(),
                     data.getDescription(),
