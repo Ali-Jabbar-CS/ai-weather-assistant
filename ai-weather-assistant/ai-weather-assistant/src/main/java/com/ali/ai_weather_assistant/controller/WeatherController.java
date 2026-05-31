@@ -65,7 +65,7 @@ public class WeatherController {
         return aiService.askAI(prompt);
     }
 
-    // returns BOTH slideshow images (one prediction) as base64 JSON
+    // returns BOTH slideshow images (two prompts, two predictions) as base64 JSON
     @GetMapping("/weather/images")
     public ResponseEntity<Map<String, String>> getWeatherImages(@RequestParam String city,
                                                                 HttpServletRequest request)
@@ -80,7 +80,8 @@ public class WeatherController {
 
         WeatherData data = weatherService.getWeather(city);
 
-        String visualPrompt = aiService.askAI(
+        // image 1: the headline landmark, street level
+        String prompt1 = aiService.askAI(
             "Write a photorealistic image generation prompt (max 15 words) for a " +
             data.getSeason() + " " + data.getTimeOfDay() + " cityscape in " +
             data.getCity() + ", " + data.getCountry() + ". " +
@@ -91,8 +92,21 @@ public class WeatherController {
             "No people. No text. Photorealistic only."
         );
 
-        System.out.println("Visual prompt: " + visualPrompt);
-        List<byte[]> images = comfyUIService.generateWeatherImages(visualPrompt);
+        // image 2: a DIFFERENT landmark / vantage so the two aren't near-identical
+        String prompt2 = aiService.askAI(
+            "Write a photorealistic image generation prompt (max 15 words) for a " +
+            data.getSeason() + " " + data.getTimeOfDay() + " view of " +
+            data.getCity() + ", " + data.getCountry() + ". " +
+            "Weather: " + data.getDescription() + ". " +
+            (data.isDaytime() ? "Natural daylight. " : "Dramatic night lighting. ") +
+            "Feature a DIFFERENT famous landmark, or a wide skyline from a higher vantage point — " +
+            "not the same street-level view. No residential buildings. No gardens. " +
+            "No people. No text. Photorealistic only."
+        );
+
+        System.out.println("Visual prompt 1: " + prompt1);
+        System.out.println("Visual prompt 2: " + prompt2);
+        List<byte[]> images = comfyUIService.generateWeatherImages(prompt1, prompt2);
 
         Base64.Encoder enc = Base64.getEncoder();
         Map<String, String> result = new HashMap<>();
@@ -107,16 +121,19 @@ public class WeatherController {
         WeatherData data = weatherService.getWeather(city);
 
         String prompt = """
-                Describe the current weather in %s in exactly 2 sentences.
-                Facts: %s, %.1f degrees Fahrenheit (feels like %.1f), humidity %d%%, wind %.1f mph.
-                Be specific and factual. No metaphors, no food references, no exclamations.
+                Describe the current weather in %s in 2 short, natural sentences,
+                like a friendly local giving a quick update.
+                Use these facts: %s, around %d degrees Fahrenheit (feels like %d),
+                %d%% humidity, wind about %d mph.
+                Weave the numbers in naturally instead of listing them off.
+                Keep it warm and conversational. No metaphors, no food references, no exclamations.
                 """.formatted(
                     data.getCity(),
                     data.getDescription(),
-                    data.getTempF(),
-                    data.getFeelsLikeF(),
+                    Math.round(data.getTempF()),
+                    Math.round(data.getFeelsLikeF()),
                     data.getHumidity(),
-                    data.getWindSpeed());
+                    Math.round(data.getWindSpeed()));
 
         String description = aiService.askAI(prompt);
 
