@@ -121,16 +121,19 @@ public class WeatherController {
         WeatherData data = weatherService.getWeather(city);
 
         String prompt = """
-                You're a friendly local giving a quick weather update for %s. Write exactly 2 short sentences.
+                You're a friendly local giving a quick weather update for %s. Write 1 or 2 short sentences - a second only if it actually adds something.
                 Conditions: %s. Temperature %d degrees Fahrenheit, feels like %d, humidity %d%%, wind %d mph.
 
                 How to write it:
-                - Open with the conditions and how it actually feels outside.
-                - Give the temperature once. Only mention humidity or wind if it genuinely stands out (very humid, very windy, or dead still); otherwise skip it.
-                - Don't list every number, don't explain why the real and feels-like temperatures differ, and don't lean on filler words like "pretty" or "really".
-                - Keep it crisp and warm. No metaphors, no food references, no exclamations.
+                - Lead with the actual temperature and the conditions. Bring up the feels-like number ONLY when it's clearly different (more than about 3 degrees), and keep it brief.
+                - Mention humidity or wind only if it genuinely stands out (very humid, very windy, or dead still); otherwise skip it.
+                - Vary how you open and phrase it - don't reuse the same sentence shape every time, and never use the phrase "as you step outside".
+                - No filler words like "pretty" or "really", no metaphors, no food references, no exclamations.
 
-                Tone to match: "It's grey and overcast in Oslo right now, sitting around 48 degrees. The air is damp and still, so it feels a touch colder than that."
+                Three examples, only to show the range of tone - do not copy them:
+                "Light rain over Stuttgart right now, around 66 degrees and a little raw."
+                "Clear and warm in San Diego, sitting near 73 with a gentle breeze. Out in the sun it feels closer to 78."
+                "Overcast and dead still in Tokyo, 61 degrees - the humidity makes it feel muggier than that."
                 """.formatted(
                     data.getCity(),
                     data.getDescription(),
